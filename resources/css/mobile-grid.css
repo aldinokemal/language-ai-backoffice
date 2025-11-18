@@ -1,0 +1,63 @@
+/**
+ * Global Mobile Grid Styles
+ *
+ * This file provides responsive horizontal scrolling for Kendo UI grids on mobile devices.
+ * Apply these styles to any page with a Kendo Grid by including this CSS file.
+ *
+ * Requirements:
+ * - Grid must have scrollable: true
+ * - Grid container should have id="grid"
+ * - Grid should be wrapped in .kt-container-fixed
+ */
+
+@media (max-width: 1024px) {
+    /* Ensure grid wrapper is constrained on mobile */
+    .kt-container-fixed {
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Grid container with horizontal scroll */
+    #grid {
+        max-width: calc(100vw - 2rem) !important; /* Account for padding */
+    }
+
+    /* Ensure table has minimum width to trigger scroll */
+    #grid .k-grid {
+        min-width: 600px;
+    }
+
+    /* Optional: Add touch scrolling for iOS */
+    #grid .k-grid-content {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Optional: Responsive pagination for mobile */
+    #grid .k-pager-wrap {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    #grid .k-pager-nav {
+        order: 1;
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+
+    #grid .k-pager-sizes {
+        order: 2;
+        flex: 1 1 auto;
+    }
+
+    #grid .k-pager-info {
+        order: 3;
+        flex: 1 1 auto;
+        text-align: right;
+    }
+
+    /* Hide first/last page buttons on mobile to save space */
+    #grid .k-pager-first,
+    #grid .k-pager-last {
+        display: none;
+    }
+}

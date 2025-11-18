@@ -1,0 +1,221 @@
+# API Development Conventions
+
+## API Overview
+
+This application provides both web and API endpoints:
+- **Web routes:** Standard Laravel web routes with Blade views
+- **API routes:** RESTful API endpoints for external consumption
+- **Public API:** Public-facing endpoints in Public module
+
+## API Route Organization
+
+### Module API Routes
+
+- Place API routes in `Modules/{Module}/routes/api.php`
+- Use route groups with middleware and prefixes
+- Use named routes for all API endpoints
+
+### Route Groups
+
+```php
+Route::prefix('api/v1')
+    ->middleware(['api', 'auth:sanctum'])
+    ->name('api.v1.')
+    ->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    });
+```
+
+## API Controllers
+
+### Controller Structure
+
+- Place API controllers in `Modules/{Module}/app/Http/Controllers/Api/`
+- Use resource controllers for CRUD operations
+- Return JSON responses using `ResponseHelper`
+
+### Response Format
+
+Use `App\Helpers\ResponseHelper` for standardized API responses:
+
+```php
+use App\Helpers\ResponseHelper;
+
+// Success response
+return ResponseHelper::success($data, 'Message', 200);
+
+// Error response
+return ResponseHelper::error('Error message', 422);
+
+// Paginated response
+return ResponseHelper::paginated($data, $pagination);
+```
+
+## API Authentication
+
+### Sanctum Authentication
+
+- Use Laravel Sanctum for API authentication
+- Token-based authentication for API clients
+- Session-based authentication for web
+
+### Authentication Middleware
+
+```php
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Protected API routes
+});
+```
+
+## API Validation
+
+### Form Requests
+
+Always use Form Request classes for API validation:
+
+```php
+php artisan make:request ApiStoreUserRequest
+```
+
+### Validation Rules
+
+- Validate all input data
+- Return validation errors in consistent format
+- Use appropriate HTTP status codes
+
+### Error Response Format
+
+```json
+{
+    "success": false,
+    "message": "Validation failed",
+    "errors": {
+        "email": ["The email field is required."],
+        "name": ["The name field must be at least 3 characters."]
+    }
+}
+```
+
+## API Response Codes
+
+Use appropriate HTTP status codes:
+
+- **200 OK** - Successful GET, PUT, PATCH requests
+- **201 Created** - Successful POST requests
+- **204 No Content** - Successful DELETE requests
+- **400 Bad Request** - Invalid request syntax
+- **401 Unauthorized** - Authentication required
+- **403 Forbidden** - Insufficient permissions
+- **404 Not Found** - Resource not found
+- **422 Unprocessable Entity** - Validation errors
+- **500 Internal Server Error** - Server errors
+
+## API Pagination
+
+### Paginated Responses
+
+Use Laravel's pagination for list endpoints:
+
+```php
+$users = SysUser::paginate(20);
+
+return ResponseHelper::paginated($users);
+```
+
+### Pagination Format
+
+```json
+{
+    "success": true,
+    "data": [...],
+    "pagination": {
+        "current_page": 1,
+        "per_page": 20,
+        "total": 100,
+        "last_page": 5
+    }
+}
+```
+
+## API Versioning
+
+- Use URL versioning: `/api/v1/`, `/api/v2/`
+- Version API routes in route groups
+- Maintain backward compatibility when possible
+
+## API Documentation
+
+### Endpoint Documentation
+
+Document API endpoints with:
+- HTTP method and URL
+- Request parameters
+- Response format
+- Authentication requirements
+- Example requests/responses
+
+### Public API Endpoints
+
+Public API endpoints (in Public module) should be:
+- Well-documented
+- Rate-limited
+- Validated thoroughly
+- Return consistent error formats
+
+## API Security
+
+### Rate Limiting
+
+Apply rate limiting to API endpoints:
+
+```php
+Route::middleware(['throttle:60,1'])->group(function () {
+    // Rate-limited routes
+});
+```
+
+### Input Sanitization
+
+- Sanitize all user input
+- Use `sanitizeText()` for HTML content
+- Validate file uploads
+- Prevent SQL injection with Eloquent
+
+### Encrypted IDs
+
+Use encrypted IDs for public-facing endpoints:
+
+```php
+use function App\Helpers\SecurityHelper\customEncrypt;
+use function App\Helpers\SecurityHelper\customDecrypt;
+
+// Return encrypted ID
+return [
+    'id' => customEncrypt($user->id),
+    'name' => $user->name,
+];
+
+// Decrypt in controller
+$id = customDecrypt($request->input('id'));
+```
+
+## API Best Practices
+
+1. **RESTful design** - Follow REST principles
+2. **Consistent responses** - Use ResponseHelper for all responses
+3. **Error handling** - Return appropriate error codes and messages
+4. **Validation** - Validate all input data
+5. **Authentication** - Protect sensitive endpoints
+6. **Rate limiting** - Prevent abuse
+7. **Versioning** - Version API endpoints
+8. **Documentation** - Document all endpoints
+9. **Pagination** - Use pagination for list endpoints
+10. **Security** - Encrypt sensitive data, sanitize input
+
+## API Testing
+
+- Write feature tests for API endpoints
+- Test authentication and authorization
+- Test validation and error handling
+- Test pagination and filtering
+- Use Laravel's HTTP testing methods

@@ -1,0 +1,366 @@
+---
+alwaysApply: false
+---
+
+# Testing Conventions
+
+## Testing Framework
+
+- **Framework:** PHPUnit 12
+- **Test Location:** `tests/` directory
+- **Module Tests:** `Modules/{Module}/tests/`
+- **Do NOT use Pest** - Convert any Pest tests to PHPUnit
+
+## Test Structure
+
+### Test Organization
+
+```
+tests/
+├── Feature/          # Feature tests (HTTP, database, full stack)
+├── Unit/             # Unit tests (isolated components)
+└── TestCase.php      # Base test case
+```
+
+### Test Naming
+
+- Test classes: `{ClassName}Test.php`
+- Test methods: `test_{description}()` or use `#[Test]` attribute
+- Use descriptive test method names
+
+### Creating Tests
+
+```bash
+# Feature test
+php artisan make:test --phpunit UserManagementTest
+
+# Unit test
+php artisan make:test --phpunit --unit UserServiceTest
+```
+
+## Test Types
+
+### Feature Tests
+
+Feature tests test the full application stack:
+- HTTP requests and responses
+- Database interactions
+- Authentication and authorization
+- Route handling
+- Middleware
+
+Example:
+```php
+public function test_user_can_view_users_list(): void
+{
+    $user = SysUser::factory()->create();
+    $this->actingAs($user);
+
+    $response = $this->get(route('system.users.index'));
+
+    $response->assertStatus(200);
+    $response->assertViewIs('system::users.index');
+}
+```
+
+### Unit Tests
+
+Unit tests test isolated components:
+- Service classes
+- Helper functions
+- Model methods (without database)
+- Utility classes
+
+Example:
+```php
+public function test_custom_encrypt_decrypt(): void
+{
+    $value = 123;
+    $encrypted = customEncrypt($value);
+    $decrypted = customDecrypt($encrypted);
+
+    $this->assertEquals($value, $decrypted);
+}
+```
+
+## Test Database
+
+### Database Configuration
+
+- Use separate test database
+- Configure in `phpunit.xml` or `.env.testing`
+- Use `RefreshDatabase` trait for migrations
+
+### Database Traits
+
+```php
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+class UserTest extends TestCase
+{
+    use RefreshDatabase;
+
+    // Tests will run migrations before each test
+}
+```
+
+## Factories
+
+### Using Factories
+
+Always use factories for creating test data:
+
+```php
+use App\Models\DB1\SysUser;
+
+$user = SysUser::factory()->create();
+$users = SysUser::factory()->count(10)->create();
+```
+
+### Factory States
+
+Use factory states for variations:
+
+```php
+$bannedUser = SysUser::factory()->banned()->create();
+$adminUser = SysUser::factory()->admin()->create();
+```
+
+### Faker Usage
+
+Use Faker methods for test data:
+
+```php
+// In factories
+'name' => fake()->name(),
+'email' => fake()->unique()->safeEmail(),
+'description' => fake()->sentence(),
+```
+
+Follow existing conventions for `$this->faker` vs `fake()`.
+
+## Authentication Testing
+
+### Acting As User
+
+```php
+$user = SysUser::factory()->create();
+$this->actingAs($user);
+
+// Or with specific guard
+$this->actingAs($user, 'sanctum');
+```
+
+### Permission Testing
+
+```php
+$user = SysUser::factory()->create();
+$user->givePermissionTo(Permission::SYSTEM_USERS_VIEW);
+$this->actingAs($user);
+
+$response = $this->get(route('system.users.index'));
+$response->assertStatus(200);
+```
+
+## HTTP Testing
+
+### Making Requests
+
+```php
+// GET request
+$response = $this->get('/users');
+
+// POST request
+$response = $this->post('/users', ['name' => 'John']);
+
+// PUT/PATCH request
+$response = $this->put('/users/1', ['name' => 'Jane']);
+
+// DELETE request
+$response = $this->delete('/users/1');
+```
+
+### Assertions
+
+```php
+// Status assertions
+$response->assertStatus(200);
+$response->assertOk();
+$response->assertCreated();
+$response->assertNotFound();
+
+// View assertions
+$response->assertViewIs('users.index');
+$response->assertViewHas('users');
+
+// JSON assertions
+$response->assertJson(['success' => true]);
+$response->assertJsonStructure(['data', 'pagination']);
+
+// Redirect assertions
+$response->assertRedirect('/users');
+```
+
+## Database Testing
+
+### Database Assertions
+
+```php
+// Assert record exists
+$this->assertDatabaseHas('sys_users', [
+    'email' => 'user@example.com',
+]);
+
+// Assert record missing
+$this->assertDatabaseMissing('sys_users', [
+    'email' => 'deleted@example.com',
+]);
+
+// Assert count
+$this->assertDatabaseCount('sys_users', 10);
+```
+
+## Running Tests
+
+### Run All Tests
+
+```bash
+composer test
+# or
+php artisan test
+```
+
+### Run Specific Tests
+
+```bash
+# Run specific test file
+php artisan test tests/Feature/UserTest.php
+
+# Run specific test method
+php artisan test --filter test_user_can_create_user
+
+# Run tests in directory
+php artisan test tests/Feature/
+```
+
+### Test Coverage
+
+```bash
+php artisan test --coverage
+```
+
+## Test Best Practices
+
+1. **Test all paths** - Happy paths, failure paths, edge cases
+2. **Use factories** - Don't manually create test data
+3. **Isolate tests** - Each test should be independent
+4. **Descriptive names** - Test names should describe what they test
+5. **Arrange-Act-Assert** - Structure tests clearly
+6. **Test behavior** - Test what the code does, not implementation
+7. **Mock external services** - Don't make real API calls in tests
+8. **Clean up** - Use `RefreshDatabase` or clean up after tests
+9. **Fast tests** - Keep tests fast and focused
+10. **Maintain tests** - Update tests when code changes
+
+## Module Testing
+
+### Module Test Structure
+
+Place module tests in `Modules/{Module}/tests/`:
+- Follow same structure as main tests
+- Use same testing conventions
+- Reference module models from `App\Models\DB1\`
+
+### Module Test Example
+
+```php
+namespace Modules\System\Tests\Feature;
+
+use Tests\TestCase;
+use App\Models\DB1\SysUser;
+use App\Enums\Permission;
+
+class UserManagementTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_user_can_view_users(): void
+    {
+        $user = SysUser::factory()->create();
+        $user->givePermissionTo(Permission::SYSTEM_USERS_VIEW);
+        $this->actingAs($user);
+
+        $response = $this->get(route('system.users.index'));
+        $response->assertOk();
+    }
+}
+```
+
+## Test Data
+
+### Seeders in Tests
+
+Use seeders for complex test data setup:
+
+```php
+$this->seed([
+    UserSeeder::class,
+    RoleSeeder::class,
+]);
+```
+
+### Test Databases
+
+- Use in-memory SQLite for fast unit tests
+- Use PostgreSQL for feature tests matching production
+- Configure in `phpunit.xml`
+
+## Common Test Patterns
+
+### Testing Controllers
+
+```php
+public function test_store_creates_user(): void
+{
+    $user = SysUser::factory()->create();
+    $this->actingAs($user);
+
+    $response = $this->post(route('users.store'), [
+        'name' => 'New User',
+        'email' => 'new@example.com',
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('sys_users', [
+        'email' => 'new@example.com',
+    ]);
+}
+```
+
+### Testing Permissions
+
+```php
+public function test_unauthorized_user_cannot_access(): void
+{
+    $user = SysUser::factory()->create();
+    // Don't assign permission
+    $this->actingAs($user);
+
+    $response = $this->get(route('system.users.index'));
+    $response->assertForbidden();
+}
+```
+
+### Testing Validation
+
+```php
+public function test_store_validates_required_fields(): void
+{
+    $user = SysUser::factory()->create();
+    $this->actingAs($user);
+
+    $response = $this->post(route('users.store'), []);
+
+    $response->assertSessionHasErrors(['name', 'email']);
+}
+```

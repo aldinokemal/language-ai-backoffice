@@ -1,0 +1,253 @@
+---
+globs: *.blade.php
+alwaysApply: false
+---
+# Frontend Conventions
+
+## Frontend Stack
+
+- **Theme:** AdminLTE with Bootstrap
+- **UI Components:** Kendo UI for jQuery, KTUI
+- **Build Tool:** Vite
+- **CSS Framework:** Tailwind CSS 4.0 (for auth views)
+- **JavaScript:** jQuery, vanilla JavaScript
+
+## Blade Templates
+
+### Layout Structure
+
+- **Main Layout:** `resources/views/layouts/app.blade.php`
+- **Auth Layout:** `resources/views/layouts/auth.blade.php`
+- Module views extend these layouts
+
+### View Organization
+
+- **Shared layouts:** `resources/views/layouts/`
+- **Module views:** `Modules/{Module}/resources/views/`
+- Use module alias for view namespacing: `modulename::view-name`
+
+### Blade Components
+
+Use Blade components for reusable UI elements:
+
+```blade
+<x-component-name :attribute="$value" />
+```
+
+### View Naming
+
+- Use kebab-case for view files: `user-management.blade.php`
+- Use descriptive names matching controller actions
+- Index views: `index.blade.php`
+- Form views: `create.blade.php`, `edit.blade.php`
+- Show views: `show.blade.php`
+
+## Breadcrumbs
+
+Use `App\Classes\Breadcrumbs` for navigation breadcrumbs:
+
+```php
+$breadcrumbs = [
+    new Breadcrumbs('Dashboard', route('dashboard')),
+    new Breadcrumbs('Users', route('system.users.index')),
+    new Breadcrumbs('Edit User'),
+];
+```
+
+Pass to view:
+```php
+return view('module.view', compact('breadcrumbs'));
+```
+
+Render in Blade:
+```blade
+@if(isset($breadcrumbs))
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            @foreach($breadcrumbs as $breadcrumb)
+                <li class="breadcrumb-item">
+                    <a href="{{ $breadcrumb->link }}">{{ $breadcrumb->title }}</a>
+                </li>
+            @endforeach
+        </ol>
+    </nav>
+@endif
+```
+
+## Kendo UI Grid
+
+### Data Grid Configuration
+
+Use Kendo UI Grid for data tables with:
+- Sorting
+- Filtering
+- Pagination
+- Row selection
+- Bulk operations
+
+### Grid Pattern
+
+```javascript
+$("#grid").kendoGrid({
+    dataSource: {
+        transport: {
+            read: {
+                url: "/api/users",
+                type: "GET"
+            }
+        },
+        pageSize: 20,
+        serverPaging: true,
+        serverFiltering: true,
+        serverSorting: true
+    },
+    selectable: "multiple, row",
+    pageable: true,
+    sortable: true,
+    filterable: true,
+    columns: [
+        { field: "name", title: "Name" },
+        { field: "email", title: "Email" }
+    ]
+});
+```
+
+## Form Handling
+
+### CSRF Protection
+
+Always include CSRF token in forms:
+
+```blade
+<form method="POST" action="{{ route('users.store') }}">
+    @csrf
+    <!-- form fields -->
+</form>
+```
+
+### Form Validation
+
+- Use Laravel validation with Form Requests
+- Display validation errors in Blade
+- Use JavaScript for client-side validation enhancement
+
+### File Uploads
+
+- Use `enctype="multipart/form-data"` for file uploads
+- Validate file types and sizes server-side
+- Use Intervention Image for image processing
+
+## Asset Management
+
+### Vite Configuration
+
+- Module-specific Vite configs in `Modules/{Module}/vite.config.js`
+- Root Vite config: `vite.config.js`
+- Use `@vite()` directive in Blade templates
+
+### Asset Compilation
+
+```bash
+# Development
+npm run dev
+
+# Production
+npm run build
+```
+
+### Module Assets
+
+Reference module assets in Blade:
+
+```blade
+@vite(['Modules/ModuleName/resources/js/app.js', 'Modules/ModuleName/resources/css/app.css'])
+```
+
+## JavaScript Conventions
+
+### jQuery Usage
+
+- jQuery is available globally
+- Use jQuery for DOM manipulation and AJAX
+- Follow existing jQuery patterns in the codebase
+
+### AJAX Requests
+
+Use jQuery AJAX for API calls:
+
+```javascript
+$.ajax({
+    url: '/api/endpoint',
+    method: 'POST',
+    data: formData,
+    success: function(response) {
+        // Handle success
+    },
+    error: function(xhr) {
+        // Handle error
+    }
+});
+```
+
+### Event Handling
+
+- Use event delegation for dynamic content
+- Namespace events for easier unbinding
+- Follow existing event handling patterns
+
+## CSS Conventions
+
+### Tailwind CSS (Auth Views)
+
+- Use Tailwind CSS 4.0 utilities for auth views
+- Follow Tailwind v4 conventions (use `@import "tailwindcss"` not `@tailwind` directives)
+- Support dark mode with `dark:` prefix
+
+### Bootstrap (AdminLTE)
+
+- Use Bootstrap classes for main application UI
+- Follow AdminLTE component patterns
+- Use Bootstrap utilities for spacing and layout
+
+### Custom Styles
+
+- Place custom CSS in `resources/css/`
+- Use module-specific CSS files when needed
+- Avoid inline styles; use classes
+
+## Theme Switching
+
+- Theme switching functionality in auth views
+- Store theme preference in session or localStorage
+- Apply theme classes to body/html element
+
+## Frontend Best Practices
+
+1. **Use semantic HTML** - Proper HTML structure
+2. **Accessibility** - ARIA labels, keyboard navigation
+3. **Responsive design** - Mobile-friendly layouts
+4. **Performance** - Optimize images, lazy loading
+5. **Error handling** - User-friendly error messages
+6. **Loading states** - Show loading indicators
+7. **Form validation** - Client and server-side validation
+8. **CSRF protection** - Always include CSRF tokens
+9. **Asset optimization** - Minify and compress assets
+10. **Browser compatibility** - Test in major browsers
+
+## UI Component Libraries
+
+### KTUI Components
+
+Reference MCP context7 for KTUI component usage:
+- Component patterns and best practices
+- Available components and configurations
+- Styling conventions and theme integration
+
+### Kendo UI for jQuery
+
+Use Kendo UI for:
+- Advanced data grids and tables
+- Date pickers and form controls
+- Charts and data visualization
+- Dialog and notification systems
+- Form validation components

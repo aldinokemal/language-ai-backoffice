@@ -1,0 +1,226 @@
+---
+globs: */Models/*.php
+alwaysApply: false
+---
+# Database Conventions
+
+## Database Configuration
+
+- **Database:** PostgreSQL 16+
+- **Connection:** Default connection configured in `config/database.php`
+- **Schema:** Custom `sys_` prefixed schema for system tables
+
+## Model Organization
+
+### Namespace Convention
+
+**All models** must be in the `App\Models\DB1\` namespace, regardless of which module they belong to:
+
+```php
+namespace App\Models\DB1;
+
+use Illuminate\Database\Eloquent\Model;
+
+class SysUser extends Model
+{
+    // ...
+}
+```
+
+### Model Naming
+
+- **System models:** Prefixed with `Sys` (e.g., `SysUser`, `SysRole`, `SysMenu`, `SysOrganization`)
+- **Business domain models:** Use descriptive names (e.g., `ClassModel`, `ClassParticipant`, `ClassSchedule`)
+- Model class names should be singular and PascalCase
+
+### Table Naming
+
+- **System tables:** Prefixed with `sys_` (e.g., `sys_users`, `sys_roles`, `sys_menus`)
+- Use snake_case for table names
+- Table names should be plural
+- Pivot tables: `{table1}_{table2}` (e.g., `sys_user_organization`, `sys_user_organization_role`)
+
+## Migration Conventions
+
+### Migration Location
+
+- **Core migrations:** `database/migrations/`
+- **Module migrations:** `Modules/{Module}/database/migrations/`
+
+### Migration Naming
+
+Follow Laravel convention: `YYYY_MM_DD_HHMMSS_description.php`
+
+Examples:
+- `2024_12_19_004605_create_sys_menus_table.php`
+- `2024_12_19_010158_create_sys_user_organization_table.php`
+
+### Migration Structure
+
+```php
+Schema::create('sys_table_name', function (Blueprint $table) {
+    $table->id();
+    // ... columns
+    $table->timestamps();
+    $table->softDeletes(); // If needed
+});
+```
+
+### Column Conventions
+
+- Use snake_case for column names
+- Use appropriate column types (`string`, `text`, `integer`, `boolean`, `timestamp`, etc.)
+- Always include `timestamps()` unless explicitly not needed
+- Use `softDeletes()` for models that need soft deletion
+- Foreign keys: `{table}_id` (e.g., `user_id`, `organization_id`)
+
+## Model Relationships
+
+### Relationship Methods
+
+Always use proper Eloquent relationship methods with return type hints:
+
+```php
+public function organization(): BelongsTo
+{
+    return $this->belongsTo(SysOrganization::class);
+}
+
+public function roles(): BelongsToMany
+{
+    return $this->belongsToMany(SysRole::class, 'sys_user_organization_role')
+        ->withPivot('organization_id')
+        ->withTimestamps();
+}
+```
+
+### Common Relationships
+
+- **User → Organizations:** Many-to-Many via `SysUserOrganization`
+- **User → Roles:** Many-to-Many via `SysUserOrganizationRole` (scoped by organization)
+- **Roles → Permissions:** Many-to-Many via Spatie Permission package
+- **Organizations → Roles:** One-to-Many
+- **Menus → Permissions:** Many-to-Many for visibility control
+
+### Eager Loading
+
+Always use eager loading to prevent N+1 queries:
+
+```php
+$users = SysUser::with(['organization', 'roles'])->get();
+```
+
+## Database Queries
+
+### Prefer Eloquent Over Query Builder
+
+- Use Eloquent models and relationships over raw queries
+- Avoid `DB::` facade; prefer `Model::query()`
+- Use relationship methods instead of manual joins
+
+### Query Patterns
+
+```php
+// Good: Using Eloquent relationships
+$user->organization->name;
+
+// Bad: Manual join
+DB::table('sys_users')
+    ->join('sys_organizations', ...)
+    ->select(...)
+    ->get();
+```
+
+### Transactions
+
+Wrap operations that modify multiple records in transactions:
+
+```php
+DB::transaction(function () {
+    $user->update($data);
+    $user->roles()->sync($roleIds);
+    // ... more operations
+});
+```
+
+## Factories and Seeders
+
+### Factories
+
+- Place factories in `database/factories/DB1/`
+- Use namespace: `Database\Factories\DB1\`
+- Follow Laravel factory conventions
+
+```php
+namespace Database\Factories\DB1;
+
+use App\Models\DB1\SysUser;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+class SysUserFactory extends Factory
+{
+    protected $model = SysUser::class;
+
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->name(),
+            'email' => fake()->unique()->safeEmail(),
+            // ...
+        ];
+    }
+}
+```
+
+### Seeders
+
+- Place seeders in `database/seeders/`
+- Use descriptive names (e.g., `UserSeeder`, `MenuSeeder`, `OrganizationSeeder`)
+- Call seeders from `DatabaseSeeder`
+
+## Model Traits
+
+### Soft Deletes
+
+Use soft deletes for models that need data retention:
+
+```php
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class SysUser extends Model
+{
+    use SoftDeletes;
+}
+```
+
+### Activity Log
+
+Use Spatie Activity Log for audit trails:
+
+```php
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
+class SysUser extends Model
+{
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email'])
+            ->logOnlyDirty();
+    }
+}
+```
+
+## Database Best Practices
+
+1. **Always use migrations** - Never modify database schema directly
+2. **Use foreign key constraints** - Define relationships at database level
+3. **Add indexes** - For frequently queried columns
+4. **Use transactions** - For multi-step operations
+5. **Prevent N+1 queries** - Use eager loading
+6. **Use model scopes** - For reusable query logic
+7. **Follow naming conventions** - Consistent naming across the application
+8. **Document relationships** - Use PHPDoc to document complex relationships

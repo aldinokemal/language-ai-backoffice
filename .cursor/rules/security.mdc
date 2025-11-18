@@ -1,0 +1,236 @@
+---
+alwaysApply: false
+---
+
+# Security Conventions
+
+## Security Overview
+
+This application implements comprehensive security measures including:
+- Multi-organization RBAC with Spatie Permission
+- Encrypted IDs for public exposure
+- Rate limiting and security logging
+- Session security with encryption
+- CSRF protection
+- Input validation and sanitization
+
+## Permission System
+
+### Permission Structure
+
+All permissions follow the pattern: `{module}.{resource}.{action}`
+
+Examples:
+- `system.users.view`
+- `system.users.create`
+- `system.users.update`
+- `system.users.delete`
+- `language.ai.users.view`
+
+### Permission Enum
+
+Define all permissions in `App\Enums\Permission` enum:
+
+```php
+enum Permission: string
+{
+    use EnumConcern;
+
+    case SYSTEM_USERS_VIEW = 'system.users.view';
+    case SYSTEM_USERS_CREATE = 'system.users.create';
+    // ...
+}
+```
+
+### Authorization in Controllers
+
+Always use `Gate::authorize()` with permission constants:
+
+```php
+use Illuminate\Support\Facades\Gate;
+use App\Enums\Permission;
+
+public function index(): View
+{
+    Gate::authorize(Permission::SYSTEM_USERS_VIEW);
+    // ...
+}
+```
+
+### Team-Based Permissions
+
+Use team-based permission scoping for multi-organization isolation:
+
+```php
+use Spatie\Permission\PermissionRegistrar;
+
+// Set team ID for permission scoping
+app(PermissionRegistrar::class)->setPermissionsTeamId($organizationId);
+```
+
+## Encryption Patterns
+
+### Custom Encryption for IDs
+
+Use `customEncrypt()` / `customDecrypt()` for public-facing IDs:
+
+```php
+use function App\Helpers\SecurityHelper\customEncrypt;
+use function App\Helpers\SecurityHelper\customDecrypt;
+
+// Encrypt ID for public exposure
+$encryptedId = customEncrypt($user->id);
+
+// Decrypt in controller
+$userId = customDecrypt($request->input('id'));
+```
+
+### Model Field Encryption
+
+Use `encryptModel()` helper for encrypting sensitive model fields:
+
+```php
+use function App\Helpers\SecurityHelper\encryptModel;
+
+$encryptedData = encryptModel($user, $includeTimestamps = false);
+```
+
+### Decrypt with Abort
+
+Use `decryptOrAbort()` for automatic 404 on decryption failure:
+
+```php
+use function App\Helpers\SecurityHelper\decryptOrAbort;
+
+$id = decryptOrAbort($request->input('id'));
+```
+
+## Input Validation
+
+### Form Requests
+
+Always use Form Request classes for validation:
+
+```php
+php artisan make:request StoreUserRequest
+```
+
+### Validation Rules
+
+- Validate all user input
+- Use Laravel validation rules
+- Provide custom error messages
+- Sanitize HTML input using `sanitizeText()` helper
+
+### HTML Sanitization
+
+Use `sanitizeText()` helper to remove dangerous HTML while preserving safe tags:
+
+```php
+use function App\Helpers\SecurityHelper\sanitizeText;
+
+$cleanText = sanitizeText($request->input('description'));
+```
+
+## Session Security
+
+### Session Configuration
+
+- **Driver:** Database sessions
+- **Encryption:** Enabled (`SESSION_ENCRYPT=true`)
+- **Lifetime:** 120 minutes
+- **Secure Cookies:** Enabled in production
+- **SameSite:** Strict
+
+### Session Management
+
+- Use session for organization/role switching
+- Store menu structure in session for performance
+- Clear sensitive session data on logout
+
+## CSRF Protection
+
+- CSRF protection enabled on all state-changing operations
+- Include `@csrf` token in all forms
+- Use `VerifyCsrfToken` middleware (enabled by default)
+- Exclude API routes from CSRF if using token authentication
+
+## Rate Limiting
+
+### Login Rate Limiting
+
+Login attempts are rate-limited with logging:
+
+```php
+// In LoginController
+RateLimiter::attempt('login', $maxAttempts = 5, function () {
+    // Login logic
+}, $decaySeconds = 60);
+```
+
+### Security Event Logging
+
+Log security events for monitoring:
+- Failed login attempts
+- Password reset requests
+- Rate limit violations
+- Banned user login attempts
+
+## User Status Management
+
+### Ban/Unban Functionality
+
+- Users can be banned/unbanned via status field
+- Banned users are automatically logged out via `LogoutIfBanned` middleware
+- Check user status before allowing actions
+
+### Email Verification
+
+- Email verification required for account activation
+- Use Laravel's built-in email verification system
+
+## Security Headers
+
+Custom `SecurityHeaders` middleware provides:
+- Content Security Policy (CSP)
+- HTTP Strict Transport Security (HSTS)
+- X-Frame-Options
+- X-Content-Type-Options
+- Referrer-Policy
+
+## Avatar Protection
+
+- Track storage source for avatars
+- Validate file types and sizes
+- Use `StorageSource` enum for source tracking
+- Prevent unauthorized access to user avatars
+
+## Bulk Operations Security
+
+- Use `selectAll` / `toggledNodes` pattern for bulk operations
+- Validate all IDs before processing
+- Wrap in transactions for data consistency
+- Check permissions for each operation
+
+## Security Best Practices
+
+1. **Always validate input** - Never trust user input
+2. **Use parameterized queries** - Prevent SQL injection
+3. **Check permissions** - Verify user has permission before actions
+4. **Encrypt sensitive data** - Use encryption for public-facing IDs
+5. **Log security events** - Monitor for suspicious activity
+6. **Use HTTPS in production** - Encrypt all traffic
+7. **Implement rate limiting** - Prevent abuse
+8. **Sanitize HTML** - Remove dangerous content
+9. **Use transactions** - Ensure data consistency
+10. **Follow principle of least privilege** - Grant minimum necessary permissions
+
+## Security Monitoring
+
+Monitor Laravel logs for:
+- Failed login patterns from same IP
+- Password reset abuse
+- Rate limit violations
+- Banned user login attempts
+- Unusual permission changes
+- Suspicious activity patterns

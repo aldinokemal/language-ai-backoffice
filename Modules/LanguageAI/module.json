@@ -1,0 +1,11 @@
+{
+    "name": "LanguageAI",
+    "alias": "languageai",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\LanguageAI\\Providers\\LanguageAIServiceProvider"
+    ],
+    "files": []
+}

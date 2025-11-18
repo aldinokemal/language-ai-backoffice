@@ -1,0 +1,276 @@
+---
+globs: *.web.php,*api.php
+alwaysApply: false
+---
+# Routing Conventions
+
+## Route Organization
+
+### Global Routes
+
+- **Web routes:** `routes/web.php` - Global web routes (e.g., redirects)
+- **Console routes:** `routes/console.php` - Artisan command routes
+
+### Module Routes
+
+Each module defines its own routes:
+- **Web routes:** `Modules/{Module}/routes/web.php`
+- **API routes:** `Modules/{Module}/routes/api.php`
+
+Routes are loaded via module `RouteServiceProvider` classes.
+
+## Route Service Providers
+
+### Module Route Service Provider
+
+Each module has a `RouteServiceProvider` that loads module routes:
+
+```php
+namespace Modules\System\Providers;
+
+class RouteServiceProvider extends ServiceProvider
+{
+    protected string $name = 'System';
+
+    protected function mapWebRoutes(): void
+    {
+        Route::middleware('web')->group(module_path($this->name, '/routes/web.php'));
+    }
+
+    protected function mapApiRoutes(): void
+    {
+        Route::middleware('api')
+            ->prefix('api')
+            ->name('api.')
+            ->group(module_path($this->name, '/routes/api.php'));
+    }
+}
+```
+
+## Route Patterns
+
+### Web Routes
+
+#### Protected Routes
+
+Use route groups with middleware for protected routes:
+
+```php
+Route::prefix('system')
+    ->middleware([
+        Authenticate::class,
+        EnsureEmailIsVerified::class,
+        LogoutIfBanned::class,
+    ])
+    ->group(function () {
+        // Protected routes
+    });
+```
+
+#### Resource Routes
+
+Use resource controllers for CRUD operations:
+
+```php
+Route::resource('users', ManageUserController::class);
+Route::resource('users', ManageUserController::class)->except(['show', 'create', 'edit']);
+Route::resource('users', ManageUserController::class)->only(['index', 'store', 'update']);
+```
+
+#### AJAX Routes
+
+Use descriptive names for AJAX endpoints:
+
+```php
+Route::post('users/ajax/datagrid', [ManageUserController::class, 'ajaxDatagrid'])
+    ->name('users.ajax.datagrid');
+
+Route::post('users/ajax/{action}', [ManageUserController::class, 'ajaxBannedOrUnbanned'])
+    ->whereIn('action', ['banned', 'unbanned']);
+```
+
+### API Routes
+
+#### API Route Groups
+
+Use consistent API route groups:
+
+```php
+Route::prefix('api/v1')
+    ->middleware(['api', 'auth:sanctum'])
+    ->name('api.v1.')
+    ->group(function () {
+        // API routes
+    });
+```
+
+#### Public API Routes
+
+Public API routes (no authentication):
+
+```php
+Route::prefix('api/public')
+    ->middleware(['api'])
+    ->name('api.public.')
+    ->group(function () {
+        // Public API routes
+    });
+```
+
+## Route Naming
+
+### Named Routes
+
+Always use named routes:
+
+```php
+Route::get('/users', [UserController::class, 'index'])->name('users.index');
+Route::post('/users', [UserController::class, 'store'])->name('users.store');
+```
+
+### Route Name Patterns
+
+- **Resource routes:** `{resource}.{action}` (e.g., `users.index`, `users.store`)
+- **AJAX routes:** `{resource}.ajax.{action}` (e.g., `users.ajax.datagrid`)
+- **API routes:** `api.{version}.{resource}.{action}` (e.g., `api.v1.users.index`)
+- **Module routes:** `{module}.{resource}.{action}` (e.g., `system.users.index`)
+
+### Route Prefixes
+
+Use module prefixes for web routes:
+
+```php
+Route::prefix('system')->group(function () {
+    // System module routes
+});
+
+Route::prefix('home')->group(function () {
+    // Home module routes
+});
+```
+
+## Middleware
+
+### Authentication Middleware
+
+- `Authenticate::class` - Require authentication
+- `EnsureEmailIsVerified::class` - Require verified email
+- `LogoutIfBanned::class` - Logout banned users
+
+### Custom Middleware
+
+- `TeamPermission` - Team-based permission checking
+- `LogoutIfBanned` - Automatic logout for banned users
+
+### Middleware Groups
+
+- `web` - Session, CSRF protection, cookie encryption
+- `api` - API routes, rate limiting
+
+## Route Parameters
+
+### Parameter Constraints
+
+Use constraints for route parameters:
+
+```php
+Route::get('users/{id}', [UserController::class, 'show'])
+    ->where('id', '[0-9]+');
+
+Route::post('users/ajax/{action}', [UserController::class, 'ajax'])
+    ->whereIn('action', ['banned', 'unbanned']);
+```
+
+### Model Binding
+
+Use route model binding:
+
+```php
+Route::get('users/{user}', [UserController::class, 'show']);
+
+// In controller
+public function show(SysUser $user): View
+{
+    // $user is automatically resolved
+}
+```
+
+## Route Redirects
+
+### Module Index Redirects
+
+Redirect module root to default page:
+
+```php
+Route::prefix('system')->group(function () {
+    Route::redirect('/', '/system/users');
+});
+```
+
+### Global Redirects
+
+```php
+// In routes/web.php
+Route::redirect('/', '/dashboard');
+```
+
+## Route Organization Best Practices
+
+1. **Group related routes** - Use route groups with prefixes and middleware
+2. **Use resource routes** - For standard CRUD operations
+3. **Name all routes** - Always use named routes
+4. **Consistent naming** - Follow naming patterns
+5. **Separate AJAX routes** - Group AJAX endpoints clearly
+6. **Version API routes** - Use version prefixes for APIs
+7. **Use middleware groups** - Apply middleware consistently
+8. **Document routes** - Comment complex route groups
+9. **Avoid deep nesting** - Keep route groups shallow
+10. **Test routes** - Write tests for route functionality
+
+## Route Examples
+
+### Complete Module Route File
+
+```php
+<?php
+
+use App\Http\Middleware\LogoutIfBanned;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
+use Illuminate\Support\Facades\Route;
+use Modules\System\Http\Controllers\ManageUserController;
+
+Route::prefix('system')
+    ->middleware([
+        Authenticate::class,
+        EnsureEmailIsVerified::class,
+        LogoutIfBanned::class,
+    ])
+    ->group(function () {
+        Route::redirect('/', '/system/users');
+
+        // Resource routes
+        Route::resource('users', ManageUserController::class);
+
+        // AJAX routes
+        Route::post('users/ajax/datagrid', [ManageUserController::class, 'ajaxDatagrid'])
+            ->name('users.ajax.datagrid');
+    });
+```
+
+### API Route File
+
+```php
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Modules\Public\Http\Controllers\Api\EventController;
+
+Route::prefix('api/public')
+    ->middleware(['api'])
+    ->name('api.public.')
+    ->group(function () {
+        Route::get('events', [EventController::class, 'index'])->name('events.index');
+        Route::post('events/{event}/register', [EventController::class, 'register'])->name('events.register');
+    });
+```

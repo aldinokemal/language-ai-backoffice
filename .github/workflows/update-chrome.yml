@@ -1,0 +1,48 @@
+name: Update Chrome Headless Version
+
+on:
+  schedule:
+    # Run weekly on Monday at 09:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-chrome:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update Chrome version
+      run: |
+        cd docker && ./update_chrome_version.sh
+
+    - name: Check for changes
+      id: verify-changed-files
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create Pull Request
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "Update Chrome headless to latest stable version"
+        title: "Update Chrome headless to latest stable version"
+        body: |
+          Automated update of Chrome headless version to the latest stable release.
+
+          This PR updates the Chrome headless version in the base Docker image to ensure compatibility with the latest web standards and security fixes.
+        branch: update-chrome-version
+        delete-branch: true
+        labels: |
+          dependencies
+          docker
+          automated

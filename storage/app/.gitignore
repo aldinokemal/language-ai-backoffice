@@ -1,0 +1,11 @@
+*
+!private/
+!private/.gitkeep
+!public/
+!public/.gitkeep
+!public/images/
+!public/images/profiles/
+!public/images/organizations/
+!public/images/profiles/default.png
+!public/images/organizations/default.png
+!.gitignore

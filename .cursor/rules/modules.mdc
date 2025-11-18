@@ -1,0 +1,181 @@
+---
+alwaysApply: false
+---
+
+# Module Development Conventions
+
+## Module Architecture
+
+This application uses **nwidart/laravel-modules** for modular architecture. Each module is self-contained and follows a consistent structure.
+
+## Creating New Modules
+
+### 1. Create Module Structure
+
+```bash
+php artisan module:make ModuleName
+```
+
+This creates the standard module structure:
+```
+Modules/ModuleName/
+├── app/
+│   ├── Http/
+│   │   └── Controllers/
+│   ├── Providers/
+│   │   ├── ModuleNameServiceProvider.php
+│   │   ├── EventServiceProvider.php
+│   │   └── RouteServiceProvider.php
+│   └── Traits/
+├── config/
+├── database/
+│   ├── migrations/
+│   ├── seeders/
+│   └── factories/
+├── resources/
+│   └── views/
+├── routes/
+│   ├── web.php
+│   └── api.php
+├── tests/
+├── composer.json
+├── module.json
+└── package.json
+```
+
+### 2. Module Configuration (`module.json`)
+
+```json
+{
+    "name": "ModuleName",
+    "alias": "modulename",
+    "description": "Module description",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\ModuleName\\Providers\\ModuleNameServiceProvider"
+    ],
+    "files": []
+}
+```
+
+### 3. Register Module Status
+
+Add module to `modules_statuses.json`:
+```json
+{
+    "ModuleName": true
+}
+```
+
+### 4. Module Service Provider
+
+Register routes, views, and bindings in `ModuleNameServiceProvider`:
+```php
+public function boot(): void
+{
+    $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+    $this->loadViewsFrom(__DIR__.'/../resources/views', 'modulename');
+    $this->loadTranslationsFrom(__DIR__.'/../lang', 'modulename');
+}
+```
+
+## Module Development Guidelines
+
+### Follow System Module Template
+
+The **System module** serves as the most comprehensive template. Reference it when creating new modules for:
+- Controller structure and patterns
+- Permission checking patterns
+- Breadcrumb implementation
+- View organization
+- Route organization
+
+### Module Routes
+
+- **Web routes:** `Modules/{Module}/routes/web.php`
+- **API routes:** `Modules/{Module}/routes/api.php`
+- Use route groups with middleware and prefixes
+- Use named routes for all routes
+
+### Module Controllers
+
+- Place controllers in `Modules/{Module}/app/Http/Controllers/`
+- Use resource controllers where appropriate
+- Always check permissions using `Gate::authorize()` with `App\Enums\Permission` constants
+- Use `App\Classes\Breadcrumbs` for navigation breadcrumbs
+
+### Module Models
+
+- **All models** should be in `App\Models\DB1\` namespace, NOT in module namespace
+- Use `sys_` prefix for system-related tables
+- Follow existing model naming conventions (`Sys*` for system models)
+
+### Module Migrations
+
+- Place migrations in `Modules/{Module}/database/migrations/`
+- Use `sys_` prefix for system tables
+- Follow Laravel migration naming conventions: `YYYY_MM_DD_HHMMSS_create_table_name.php`
+
+### Module Views
+
+- Place views in `Modules/{Module}/resources/views/`
+- Use Blade components and layouts from `resources/views/layouts/`
+- Follow existing view naming conventions
+- Use module alias for view namespacing: `modulename::view-name`
+
+### Module Permissions
+
+- Define permissions in `App\Enums\Permission` enum
+- Follow pattern: `{module}.{resource}.{action}`
+- Use permission constants in controllers: `Gate::authorize(Permission::MODULE_RESOURCE_ACTION)`
+
+### Module Assets
+
+- Module-specific assets in `Modules/{Module}/resources/`
+- Use Vite for asset compilation
+- Reference module assets in Blade: `@vite(['Modules/ModuleName/resources/js/app.js'])`
+
+## Module Dependencies
+
+Modules can have their own `composer.json` and `package.json` files. The main `composer.json` uses `wikimedia/composer-merge-plugin` to merge module dependencies.
+
+## Module Testing
+
+- Place tests in `Modules/{Module}/tests/`
+- Follow Laravel testing conventions
+- Use PHPUnit (not Pest)
+- Create factories for module models in `database/factories/DB1/`
+
+## Module Commands
+
+```bash
+# List all modules
+php artisan module:list
+
+# Enable module
+php artisan module:enable ModuleName
+
+# Disable module
+php artisan module:disable ModuleName
+
+# Create module
+php artisan module:make ModuleName
+
+# Create module controller
+php artisan module:make-controller ControllerName ModuleName
+
+# Create module model
+php artisan module:make-model ModelName ModuleName
+```
+
+## Module Best Practices
+
+1. **Keep modules focused** - Each module should have a single, well-defined purpose
+2. **Minimize cross-module dependencies** - Prefer shared code in `app/` over module-to-module dependencies
+3. **Use shared models** - All models in `App\Models\DB1\` namespace for consistency
+4. **Follow existing patterns** - Reference System module for comprehensive examples
+5. **Register everything** - Routes, views, migrations, providers must be properly registered
+6. **Document permissions** - Add all module permissions to `App\Enums\Permission`
+7. **Use encrypted IDs** - Follow `customEncrypt()` pattern for public-facing IDs
+8. **Implement breadcrumbs** - Use `App\Classes\Breadcrumbs` for navigation

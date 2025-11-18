@@ -1,0 +1,115 @@
+---
+alwaysApply: false
+---
+
+# General Project Conventions
+
+## Project Overview
+
+This is a **Laravel 12** modular application for Language AI backoffice administration with:
+- Multi-organization support
+- Role-based access control (RBAC) using Spatie Permission
+- Modular architecture using nwidart/laravel-modules
+- PostgreSQL database with `sys_` prefixed system tables
+- AdminLTE theme with Bootstrap frontend
+- Firebase Cloud Messaging (FCM) for push notifications
+
+## Tech Stack
+
+- **Backend:** Laravel 12.x, PHP 8.4+
+- **Frontend:** AdminLTE, Bootstrap, Kendo UI for jQuery, KTUI
+- **Database:** PostgreSQL 16+ with custom `sys_` prefixed schema
+- **Authentication:** Multi-organization RBAC with Spatie Permission
+- **Modules:** nwidart/laravel-modules for modular architecture
+- **Image Processing:** Intervention Image
+- **Storage:** AWS S3 integration via League Flysystem
+- **Activity Logging:** Spatie Laravel Activity Log
+- **Development Tools:** Laravel Pint, Laravel Pail, Laravel Boost
+
+## Project Structure
+
+### Core Application (`app/`)
+
+- **Classes/** - Application classes (`Breadcrumbs`, `EnumConcern`)
+- **Enums/** - Application enumerations (`BuiltInRole`, `Permission`, `StorageSource`)
+- **Helpers/** - Global helper functions (security, encryption, response helpers)
+- **Http/Controllers/** - Base controllers
+- **Http/Middleware/** - Custom middleware (`LogoutIfBanned`, `TeamPermission`)
+- **Models/DB1/** - All database models under `App\Models\DB1\` namespace
+- **Notifications/** - Custom notification channels and message classes
+- **Providers/** - Service providers
+- **Services/** - Application services (`FcmService`)
+
+### Modules (`Modules/`)
+
+Each module is self-contained with:
+- `app/Http/Controllers/` - Module controllers
+- `app/Providers/` - Module service providers
+- `routes/` - Module routes (`web.php`, `api.php`)
+- `resources/views/` - Module Blade templates
+- `database/` - Module migrations, seeders, factories
+- `module.json` - Module configuration
+
+**Current Modules:**
+- `Auth` - Authentication and user management
+- `Home` - Dashboard and user profile management
+- `System` - System administration (users, roles, permissions, organizations, menus)
+- `Public` - Public service and event management
+- `LanguageAI` - Language AI service management
+
+## Naming Conventions
+
+### Models
+- All models in `App\Models\DB1\` namespace
+- System models prefixed with `Sys` (e.g., `SysUser`, `SysRole`, `SysMenu`)
+- Business domain models use descriptive names (e.g., `ClassModel`, `ClassParticipant`)
+
+### Controllers
+- Use descriptive names ending with `Controller` (e.g., `ManageUserController`, `DashboardController`)
+- Follow Laravel resource controller conventions where applicable
+
+### Enums
+- Enum cases should be UPPER_SNAKE_CASE
+- Use descriptive names matching permission patterns (e.g., `SYSTEM_USERS_VIEW`)
+
+### Permissions
+- Follow pattern: `{module}.{resource}.{action}` (e.g., `system.users.view`, `system.roles.create`)
+- Define all permissions in `App\Enums\Permission` enum
+
+### Database Tables
+- System tables prefixed with `sys_` (e.g., `sys_users`, `sys_roles`, `sys_menus`)
+- Use snake_case for table and column names
+- Pivot tables: `{table1}_{table2}` (e.g., `sys_user_organization`)
+
+## Code Style
+
+- Follow PSR-12 coding standards
+- Use Laravel Pint for code formatting: `php artisan pint` or `vendor/bin/pint --dirty`
+- Always use explicit return type declarations for methods
+- Use PHP 8 constructor property promotion
+- Prefer PHPDoc blocks over inline comments
+- Use descriptive variable and method names
+
+## Helper Functions
+
+Global helper functions are defined in `app/Helpers/`:
+- `customEncrypt()` / `customDecrypt()` - AES-256-ECB encryption for IDs
+- `encryptModel()` - Recursively encrypt model fields
+- `sanitizeText()` - HTML sanitization
+- `decryptOrAbort()` - Decrypt with 404 fallback
+- `responseHelper()` - Standardized API responses
+
+## Breadcrumbs
+
+Use `App\Classes\Breadcrumbs` for navigation breadcrumbs:
+```php
+$breadcrumbs = [
+    new Breadcrumbs('Dashboard', route('dashboard')),
+    new Breadcrumbs('Users', route('system.users.index')),
+    new Breadcrumbs('Edit User'),
+];
+```
+
+## Module Status
+
+Module enable/disable status is tracked in `modules_statuses.json`. Always update this file when adding new modules.

@@ -1,0 +1,49 @@
+# Ignore VCS
+.git
+.gitignore
+
+# Local env and secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# PHP Composer
+vendor
+
+# IDE/editor
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Tests and local artifacts
+coverage
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+
+# Storage: exclude everything by default but keep default public images
+storage/**
+!storage/app/public/
+!storage/app/public/images/
+!storage/app/public/images/profiles/
+!storage/app/public/images/organizations/
+!storage/app/public/images/profiles/default.png
+!storage/app/public/images/organizations/default.png
+
+# Build outputs (copied from builder stages)
+public/build
+public/hot
+

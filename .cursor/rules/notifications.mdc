@@ -1,0 +1,310 @@
+# Notification System Conventions
+
+## Notification Overview
+
+This application features a comprehensive multi-channel notification system supporting:
+- **Database Notifications** - In-app notification storage
+- **Email Notifications** - Email delivery via Laravel mail
+- **FCM Push Notifications** - Real-time push notifications via Firebase Cloud Messaging
+
+## Notification Architecture
+
+### Components
+
+- **Custom FCM Channel** - `App\Notifications\Channels\FcmChannel`
+- **FCM Service** - `App\Services\FcmService` (Firebase HTTP v1 API integration)
+- **FCM Message Builder** - `App\Notifications\Messages\FcmMessage`
+- **Token Management** - `sys_user_fbtokens` table for device tokens
+
+### Channel Registration
+
+Custom notification channels are registered in `AppServiceProvider`:
+
+```php
+use App\Notifications\Channels\FcmChannel;
+use Illuminate\Notifications\ChannelManager;
+
+public function boot(): void
+{
+    Notification::extend('fcm', function ($app) {
+        return new FcmChannel($app->make(FcmService::class));
+    });
+}
+```
+
+## Creating Notifications
+
+### Notification Structure
+
+Place module-specific notifications in `Modules/{Module}/app/Notifications/`:
+
+```php
+namespace Modules\Home\Notifications;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Notification;
+use App\Notifications\Messages\FcmMessage;
+
+class Greeting extends Notification
+{
+    use Queueable;
+
+    public function __construct(
+        public string $title,
+        public string $body,
+        public string $url,
+        public array $channels = ['database', 'mail', 'fcm']
+    ) {}
+
+    public function via($notifiable): array
+    {
+        return $this->channels;
+    }
+
+    public function toFcm($notifiable): FcmMessage
+    {
+        return FcmMessage::create()
+            ->title($this->title)
+            ->body($this->body)
+            ->clickAction($this->url)
+            ->priority('high');
+    }
+
+    public function toMail($notifiable): MailMessage
+    {
+        return (new MailMessage)
+            ->subject($this->title)
+            ->line($this->body)
+            ->action('View', $this->url);
+    }
+
+    public function toArray($notifiable): array
+    {
+        return [
+            'title' => $this->title,
+            'body' => $this->body,
+            'url' => $this->url,
+        ];
+    }
+}
+```
+
+## Sending Notifications
+
+### Basic Usage
+
+```php
+use Modules\Home\Notifications\Greeting;
+
+$user->notify(new Greeting(
+    'Welcome!',
+    'Thanks for joining our platform',
+    route('dashboard'),
+    ['database', 'mail', 'fcm']
+));
+```
+
+### Specifying Channels
+
+Control which channels to use:
+
+```php
+// All channels (default)
+$user->notify(new Greeting(...));
+
+// Specific channels
+$user->notify(new Greeting(..., ['database', 'fcm']));
+
+// Single channel
+$user->notify(new Greeting(..., ['mail']));
+```
+
+### Queued Notifications
+
+Use `Queueable` trait for async delivery:
+
+```php
+use Illuminate\Bus\Queueable;
+
+class Greeting extends Notification
+{
+    use Queueable;
+    // ...
+}
+```
+
+## FCM Push Notifications
+
+### FCM Message Builder
+
+Use fluent API for building FCM messages:
+
+```php
+public function toFcm($notifiable): FcmMessage
+{
+    return FcmMessage::create()
+        ->title('Notification Title')
+        ->body('Notification body message')
+        ->data(['key' => 'value']) // Custom data payload
+        ->clickAction(route('notifications')) // Action URL
+        ->priority('high') // 'high' or 'normal'
+        ->ttl(3600); // Time to live in seconds
+}
+```
+
+### FCM Configuration
+
+Configure FCM in `.env`:
+
+```env
+FCM_CREDENTIALS=config/credentials.json
+FCM_PROJECT_ID=language-ai-project
+FCM_PRIORITY=high
+FCM_TTL=3600
+FCM_LOGGING_ENABLED=true
+FCM_LOGGING_CHANNEL=daily
+```
+
+### Firebase Setup
+
+1. Obtain Firebase service account credentials JSON from Firebase Console
+2. Place credentials file at `config/credentials.json`
+3. Update `FCM_PROJECT_ID` in `.env` with Firebase project ID
+
+## Device Token Management
+
+### Token Storage
+
+Device tokens are stored in `sys_user_fbtokens` table:
+- `user_id` - Foreign key to `sys_users`
+- `token` - Firebase device token
+- `device_type` - Device type (optional)
+- `created_at`, `updated_at` - Timestamps
+
+### Token Registration
+
+Frontend should register FCM tokens via API:
+
+```javascript
+POST /notification/store-token
+{
+    "token": "firebase-device-token"
+}
+```
+
+### Multi-Device Support
+
+FCM channel automatically:
+- Retrieves all user tokens from `sys_user_fbtokens`
+- Broadcasts notification to each registered device
+- Handles token invalidation and cleanup
+
+## Notification Patterns
+
+### Multi-Channel Pattern
+
+Always return array of channels from `via()` method:
+
+```php
+public function via($notifiable): array
+{
+    return ['database', 'mail', 'fcm'];
+}
+```
+
+### Fluent Message Builders
+
+Use fluent API for each channel:
+- `FcmMessage` for FCM
+- `MailMessage` for email
+- `array` for database
+
+### Conditional Channels
+
+Determine channels based on notifiable or conditions:
+
+```php
+public function via($notifiable): array
+{
+    $channels = ['database'];
+    
+    if ($notifiable->email_notifications_enabled) {
+        $channels[] = 'mail';
+    }
+    
+    if ($notifiable->push_notifications_enabled) {
+        $channels[] = 'fcm';
+    }
+    
+    return $channels;
+}
+```
+
+## Notification Best Practices
+
+1. **Use Queueable** - Queue notifications for better performance
+2. **Specify channels** - Control which channels to use
+3. **Fluent builders** - Use fluent API for message building
+4. **Token management** - Properly register and clean up tokens
+5. **Error handling** - Handle FCM errors gracefully
+6. **Logging** - Enable FCM logging for debugging
+7. **Testing** - Test notifications in development
+8. **Performance** - Use queues for high-volume notifications
+9. **Security** - Validate notification data
+10. **Documentation** - Document notification purposes
+
+## FCM Service Details
+
+### OAuth2 JWT Authentication
+
+- Uses Firebase service account credentials
+- Generates OAuth2 JWT tokens for API authentication
+- Caches access tokens until expiration
+- Automatically refreshes expired tokens
+
+### HTTP v1 API
+
+- Uses Firebase Cloud Messaging HTTP v1 API
+- Supports all FCM message types
+- Handles batch sending to multiple devices
+- Returns detailed error responses
+
+### Error Handling
+
+- Logs FCM errors to Laravel logs
+- Handles invalid tokens
+- Retries on transient errors
+- Reports delivery failures
+
+## Notification Examples
+
+### Welcome Notification
+
+```php
+$user->notify(new Greeting(
+    'Welcome to Language AI!',
+    'Your account has been created successfully.',
+    route('dashboard'),
+    ['database', 'mail', 'fcm']
+));
+```
+
+### Password Reset Notification
+
+```php
+$user->notify(new PasswordReset(
+    $resetUrl,
+    ['mail'] // Email only
+));
+```
+
+### System Alert Notification
+
+```php
+$user->notify(new SystemAlert(
+    'System Maintenance',
+    'Scheduled maintenance will occur tonight at 2 AM.',
+    route('announcements'),
+    ['database', 'fcm'] // No email
+));
+```

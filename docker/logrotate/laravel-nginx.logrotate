@@ -1,0 +1,9 @@
+/var/www/storage/logs/laravel-worker.log {
+    daily
+    copytruncate
+    rotate 3
+    missingok
+    notifempty
+    dateext
+    dateformat -%Y-%m-%d
+}
