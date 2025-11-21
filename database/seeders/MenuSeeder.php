@@ -24,6 +24,17 @@ class MenuSeeder extends Seeder
                 'show_if_has_permission' => null,
                 'child'                  => [
                     [
+                        'name'                   => 'Dashboard',
+                        'is_active'              => true,
+                        'order'                  => 0,
+                        'icon'                   => null,
+                        'permissions'            => [
+                            ['name' => Permission::LANGUAGE_AI_DASHBOARD_VIEW, 'alias' => 'VIEW'],
+                        ],
+                        'show_if_has_permission' => Permission::LANGUAGE_AI_DASHBOARD_VIEW,
+                        'url'                    => '/language-ai/dashboard',
+                    ],
+                    [
                         'name'                   => 'Users',
                         'is_active'              => true,
                         'order'                  => 1,
@@ -35,6 +46,20 @@ class MenuSeeder extends Seeder
                         ],
                         'show_if_has_permission' => Permission::LANGUAGE_AI_USERS_VIEW,
                         'url'                    => '/language-ai/users',
+                    ],
+                    [
+                        'name'                   => 'Plans',
+                        'is_active'              => true,
+                        'order'                  => 2,
+                        'icon'                   => null,
+                        'permissions'            => [
+                            ['name' => Permission::LANGUAGE_AI_PLANS_VIEW, 'alias' => 'VIEW'],
+                            ['name' => Permission::LANGUAGE_AI_PLANS_CREATE, 'alias' => 'CREATE'],
+                            ['name' => Permission::LANGUAGE_AI_PLANS_UPDATE, 'alias' => 'UPDATE'],
+                            ['name' => Permission::LANGUAGE_AI_PLANS_DELETE, 'alias' => 'DELETE'],
+                        ],
+                        'show_if_has_permission' => Permission::LANGUAGE_AI_PLANS_VIEW,
+                        'url'                    => '/language-ai/plans',
                     ],
                 ],
             ],

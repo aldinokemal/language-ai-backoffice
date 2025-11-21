@@ -1,4 +1,4 @@
-FROM registry.hydrogendioxide.net/dolkode/dk-backoffice:base AS composer_deps
+FROM registry.hydrogendioxide.net/languageai/backoffice:base AS composer_deps
 
 WORKDIR /var/www/
 
@@ -6,7 +6,7 @@ WORKDIR /var/www/
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-autoloader
 
-FROM registry.hydrogendioxide.net/dolkode/dk-backoffice:base AS assets_builder
+FROM registry.hydrogendioxide.net/languageai/backoffice:base AS assets_builder
 
 WORKDIR /var/www/
 
@@ -18,7 +18,7 @@ COPY Modules/ Modules/
 COPY vite.config.js vite.config.js
 RUN if [ -f package.json ]; then npm run build; fi
 
-FROM registry.hydrogendioxide.net/dolkode/dk-backoffice:base
+FROM registry.hydrogendioxide.net/languageai/backoffice:base
 
 WORKDIR /var/www/
 
