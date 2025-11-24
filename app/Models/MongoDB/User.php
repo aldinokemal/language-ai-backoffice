@@ -2,6 +2,7 @@
 
 namespace App\Models\MongoDB;
 
+use MongoDB\BSON\ObjectId;
 use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\BelongsTo;
 use MongoDB\Laravel\Relations\HasMany;
@@ -42,11 +43,38 @@ class User extends Model
     }
 
     /**
-     * Get the user's devices
+     * Get the user's devices (non-revoked only)
      */
     public function devices(): HasMany
     {
-        return $this->hasMany(UserDevice::class, 'user_id');
+        $relation = $this->hasMany(UserDevice::class, 'user_id', '_id');
+
+        // Ensure the local key is converted to ObjectId for MongoDB queries
+        // MongoDB Laravel relationships require ObjectId matching, but _id may be returned as string
+        $localKey = $this->getKey();
+        if ($localKey && is_string($localKey)) {
+            // Clear existing constraints and add with ObjectId
+            $relation->getQuery()->getQuery()->wheres = [];
+            $relation->where('user_id', new ObjectId($localKey));
+        }
+
+        // Filter out revoked devices (only return devices where revoked_at is null)
+        $relation->whereNull('revoked_at');
+
+        return $relation;
+    }
+
+    /**
+     * Get the value of the model's primary key for eager loading relationships
+     * Override to ensure ObjectId is returned for MongoDB relationships
+     */
+    public function getKeyForSelectQuery()
+    {
+        $key = $this->getKey();
+        if ($key && is_string($key)) {
+            return new ObjectId($key);
+        }
+        return $key;
     }
 
     /**
