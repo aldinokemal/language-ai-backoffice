@@ -24,6 +24,7 @@ WORKDIR /var/www/
 
 # Setup Nginx
 RUN rm /etc/nginx/sites-enabled/default
+COPY /docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY /docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Copy Logrotate Configuration
@@ -31,6 +32,10 @@ COPY /docker/logrotate/* /etc/logrotate.d/
 
 # Set PHP ini
 COPY /docker/php/php.ini "$PHP_INI_DIR/conf.d/application.ini"
+COPY /docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Remove default Docker PHP-FPM config that overrides our www.conf
+RUN rm -f /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Supervisor configuration
 COPY /docker/supervisor /etc/
@@ -45,11 +50,12 @@ COPY --from=assets_builder /var/www/public/build /var/www/public/build
 # Remove any stale Laravel caches that may reference dev-only providers
 RUN rm -rf bootstrap/cache/*.php || true
 
-# Ensure writable directories BEFORE running composer scripts/artisan
+# Ensure writable directories and proper permissions
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs \
     && mkdir -p bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R ug+rwX storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache app \
+    && chmod -R ug+rwX storage bootstrap/cache app \
+    && chmod -R 775 storage/logs
 
 # Generate optimized autoloader and re-run package discovery (excludes dev packages)
 RUN composer dump-autoload -o
@@ -59,6 +65,11 @@ RUN mkdir -p /var/www/storage/app/public \
     && rm -rf /var/www/public/storage \
     && ln -s /var/www/storage/app/public /var/www/public/storage
 
+# Copy and set up entrypoint script
+COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
 
 USER root

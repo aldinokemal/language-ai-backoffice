@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Middleware\CachedAuth;
+use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Support\Facades\Route;
 use Modules\LanguageAI\Http\Controllers\LaiUserController;
 use Modules\LanguageAI\Http\Controllers\LaiPlanController;
 use Modules\LanguageAI\Http\Controllers\LaiDashboardController;
 
-Route::middleware(['auth', 'verified'])
+Route::middleware([CachedAuth::class, EnsureEmailIsVerified::class])
     ->prefix('language-ai')
     ->group(function () {
         Route::prefix('dashboard')

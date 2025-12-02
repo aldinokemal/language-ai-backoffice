@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Modules\Auth\Traits\SessionTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -105,6 +106,9 @@ class LoginController extends Controller
         $request->session()->regenerate();
         $this->setSession();
 
+        // Store user ID in session for cached auth
+        session(['user_id' => $user->id]);
+
         // Log successful login
         Log::info('Successful login', [
             'user_id' => $user->id,
@@ -133,6 +137,9 @@ class LoginController extends Controller
             'user_agent' => $request->userAgent(),
             'timestamp' => now(),
         ]);
+
+        // Clear cached user data
+        Cache::forget("auth_user_{$user->id}");
 
         // Flush all session data first
         $request->session()->flush();

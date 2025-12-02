@@ -1,7 +1,7 @@
 <?php
 
+use App\Http\Middleware\CachedAuth;
 use App\Http\Middleware\LogoutIfBanned;
-use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Support\Facades\Route;
 use Modules\System\Http\Controllers\ManageMenuController;
@@ -23,7 +23,7 @@ use Modules\System\Http\Controllers\ManageUserController;
 
 Route::prefix('system')
     ->middleware([
-        Authenticate::class,
+        CachedAuth::class,
         EnsureEmailIsVerified::class,
         LogoutIfBanned::class,
     ])

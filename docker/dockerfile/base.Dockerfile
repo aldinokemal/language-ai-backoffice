@@ -48,7 +48,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-RUN install-php-extensions pdo_pgsql exif pcntl bcmath gd excimer zip opcache @composer imagick mongodb
+RUN install-php-extensions pdo_pgsql exif pcntl bcmath gd excimer zip opcache @composer imagick mongodb redis
 
 # Install Node.js 24
 RUN curl -sL https://deb.nodesource.com/setup_24.x | bash - \

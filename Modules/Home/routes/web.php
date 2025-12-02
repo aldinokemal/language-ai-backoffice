@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Auth\Middleware\Authenticate;
+use App\Http\Middleware\CachedAuth;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Support\Facades\Route;
 use Modules\Home\Http\Controllers\DashboardController;
@@ -9,7 +9,7 @@ use Modules\Home\Http\Controllers\NotificationController;
 use Modules\Home\Http\Controllers\SwitchController;
 
 Route::middleware([
-    Authenticate::class,
+    CachedAuth::class,
     EnsureEmailIsVerified::class,
 ])->group(function () {
     Route::redirect('/', '/dashboard');
