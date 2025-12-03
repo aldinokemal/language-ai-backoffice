@@ -129,5 +129,5 @@ return [
     'kendo_grid_license_key' => env('KENDO_GRID_LICENSE_KEY'),
 
     'image_profile_path' => 'images/profiles/%s.%s',
-    'image_org_path'     => 'images/organizations/%s.%s',
+    'image_org_path' => 'images/organizations/%s.%s',
 ];

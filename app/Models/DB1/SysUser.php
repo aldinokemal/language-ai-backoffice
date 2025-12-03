@@ -10,13 +10,13 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Traits\HasRoles;
 
 class SysUser extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, VerifyEmail, HasRoles, SoftDeletes, LogsActivity;
+    use HasFactory, HasRoles, LogsActivity, Notifiable, SoftDeletes, VerifyEmail;
 
     protected $table = 'sys_users';
 
@@ -80,7 +80,7 @@ class SysUser extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'password' => 'hashed',
         ];
     }
 
@@ -91,12 +91,11 @@ class SysUser extends Authenticatable implements MustVerifyEmail
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('system_users')
-            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
                 'created' => 'Pengguna baru dibuat',
-                'updated' => 'Data pengguna diperbarui', 
+                'updated' => 'Data pengguna diperbarui',
                 'deleted' => 'Pengguna dihapus',
                 default => "Pengguna {$eventName}"
             });
     }
-
 }

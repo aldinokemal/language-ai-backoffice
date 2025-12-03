@@ -80,7 +80,7 @@ class ClassParticipant extends Model
      */
     public function hasSignature(): bool
     {
-        return !empty($this->signature);
+        return ! empty($this->signature);
     }
 
     /**
@@ -88,7 +88,7 @@ class ClassParticipant extends Model
      */
     public function hasFaceRecognitionData(): bool
     {
-        return !empty($this->face_recognition_data_path);
+        return ! empty($this->face_recognition_data_path);
     }
 
     /**

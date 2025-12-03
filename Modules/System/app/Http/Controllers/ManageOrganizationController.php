@@ -9,11 +9,11 @@ use App\Http\Controllers\Controller;
 use App\Models\DB1\SysOrganization;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
 
 class ManageOrganizationController extends Controller
 {
@@ -22,7 +22,7 @@ class ManageOrganizationController extends Controller
     private function defaultParser(): array
     {
         return [
-            'url'  => $this->url,
+            'url' => $this->url,
             'view' => 'system::organization',
         ];
     }
@@ -43,7 +43,7 @@ class ManageOrganizationController extends Controller
             'breadcrumbs' => $breadcrumbs,
         ]);
 
-        return view("system::organization.index")->with($parser);
+        return view('system::organization.index')->with($parser);
     }
 
     /**
@@ -61,10 +61,10 @@ class ManageOrganizationController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'data'        => null,
+            'data' => null,
         ]);
 
-        return view("system::organization.upsert")->with($parser);
+        return view('system::organization.upsert')->with($parser);
     }
 
     private function handleUpsert(Request $request, ?SysOrganization $organization = null): mixed
@@ -77,7 +77,7 @@ class ManageOrganizationController extends Controller
             'has_file' => $request->hasFile('logo'),
             'logo_remove' => $request->get('logo_remove'),
             'files' => $request->allFiles(),
-            'all_data' => $request->except(['_token', '_method'])
+            'all_data' => $request->except(['_token', '_method']),
         ]);
 
         // Validation rules
@@ -105,8 +105,8 @@ class ManageOrganizationController extends Controller
             DB::beginTransaction();
 
             // Create or update organization
-            if (!$isUpdate) {
-                $organization = new SysOrganization();
+            if (! $isUpdate) {
+                $organization = new SysOrganization;
             }
 
             // Update basic organization data
@@ -125,7 +125,7 @@ class ManageOrganizationController extends Controller
             if ($request->boolean('logo_remove') && $organization->logo_path) {
                 try {
                     // Delete existing logo if not default
-                    if (!str_contains($organization->logo_path, 'default.png') && $organization->logo_storage === StorageSource::S3->value) {
+                    if (! str_contains($organization->logo_path, 'default.png') && $organization->logo_storage === StorageSource::S3->value) {
                         Storage::disk(StorageSource::S3->value)->delete($organization->logo_path);
                     }
 
@@ -165,7 +165,7 @@ class ManageOrganizationController extends Controller
 
                     if ($filePath) {
                         // Delete old logo if exists and not default
-                        if ($organization->logo_path && !str_contains($organization->logo_path, 'default.png') && $organization->logo_storage === StorageSource::S3->value) {
+                        if ($organization->logo_path && ! str_contains($organization->logo_path, 'default.png') && $organization->logo_storage === StorageSource::S3->value) {
                             Storage::disk(StorageSource::S3->value)->delete($organization->logo_path);
                         }
 
@@ -209,6 +209,7 @@ class ManageOrganizationController extends Controller
             $errorMessage = $isUpdate ?
                 'Gagal memperbarui organisasi' :
                 'Gagal membuat organisasi';
+
             return response()->json(['message' => $errorMessage], 500);
         }
     }
@@ -219,6 +220,7 @@ class ManageOrganizationController extends Controller
     public function store(Request $request)
     {
         Gate::authorize(Permission::SYSTEM_ORGANIZATIONS_CREATE);
+
         return $this->handleUpsert($request);
     }
 
@@ -229,7 +231,7 @@ class ManageOrganizationController extends Controller
     {
         Gate::authorize(Permission::SYSTEM_ORGANIZATIONS_VIEW);
 
-        $id           = customDecrypt($id);
+        $id = customDecrypt($id);
         $organization = SysOrganization::findOrFail($id);
 
         $breadcrumbs = [
@@ -240,10 +242,10 @@ class ManageOrganizationController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'data'        => $organization,
+            'data' => $organization,
         ]);
 
-        return view("system::organization.show")->with($parser);
+        return view('system::organization.show')->with($parser);
     }
 
     /**
@@ -253,7 +255,7 @@ class ManageOrganizationController extends Controller
     {
         Gate::authorize(Permission::SYSTEM_ORGANIZATIONS_UPDATE);
 
-        $id           = customDecrypt($id);
+        $id = customDecrypt($id);
         $organization = SysOrganization::findOrFail($id);
 
         $breadcrumbs = [
@@ -264,10 +266,10 @@ class ManageOrganizationController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'data'        => $organization,
+            'data' => $organization,
         ]);
 
-        return view("system::organization.upsert")->with($parser);
+        return view('system::organization.upsert')->with($parser);
     }
 
     /**
@@ -307,14 +309,14 @@ class ManageOrganizationController extends Controller
                     'phone' => $organization->phone,
                     'email' => $organization->email,
                     'website' => $organization->website,
-                    'had_logo' => !empty($organization->logo_path),
+                    'had_logo' => ! empty($organization->logo_path),
                 ],
             ])
             ->inLog('system_organizations')
             ->log('Organisasi dihapus');
 
         // Delete logo if exists and not default
-        if ($organization->logo_path && !str_contains($organization->logo_path, 'default.png') && $organization->logo_storage === StorageSource::S3->value) {
+        if ($organization->logo_path && ! str_contains($organization->logo_path, 'default.png') && $organization->logo_storage === StorageSource::S3->value) {
             Storage::disk(StorageSource::S3->value)->delete($organization->logo_path);
         }
 
@@ -333,16 +335,16 @@ class ManageOrganizationController extends Controller
         if ($request->has('filter.filters')) {
             $filters = $request->input('filter.filters');
             foreach ($filters as $filter) {
-                if (!isset($filter['field']) || !isset($filter['value'])) {
+                if (! isset($filter['field']) || ! isset($filter['value'])) {
                     continue;
                 }
 
                 switch ($filter['field']) {
                     case 'name':
-                        $query->where('name', 'ilike', '%' . strtolower($filter['value']) . '%');
+                        $query->where('name', 'ilike', '%'.strtolower($filter['value']).'%');
                         break;
                     case 'code':
-                        $query->where('code', 'ilike', '%' . strtolower($filter['value']) . '%');
+                        $query->where('code', 'ilike', '%'.strtolower($filter['value']).'%');
                         break;
                 }
             }
@@ -369,14 +371,14 @@ class ManageOrganizationController extends Controller
 
         $formattedData = [
             'total' => $totalCount,
-            'data'  => $organizations->map(function ($organization) {
+            'data' => $organizations->map(function ($organization) {
                 return [
-                    'id'      => customEncrypt($organization->id),
-                    'code'    => $organization->code,
-                    'name'    => $organization->name,
+                    'id' => customEncrypt($organization->id),
+                    'code' => $organization->code,
+                    'name' => $organization->name,
                     'address' => $organization->address,
-                    'phone'   => $organization->phone,
-                    'email'   => $organization->email,
+                    'phone' => $organization->phone,
+                    'email' => $organization->email,
                     'website' => $organization->website,
                 ];
             }),

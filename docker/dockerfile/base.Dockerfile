@@ -60,7 +60,7 @@ RUN curl -sL https://deb.nodesource.com/setup_24.x | bash - \
 RUN npm install -g puppeteer --unsafe-perm=true --allow-root
 
 # Install chrome-headless-shell-linux64
-ARG CHROME_VERSION=142.0.7444.175
+ARG CHROME_VERSION=143.0.7499.40
 RUN wget https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-headless-shell-linux64.zip \
     && unzip chrome-headless-shell-linux64.zip -d /usr/bin \
     && rm chrome-headless-shell-linux64.zip

@@ -15,9 +15,10 @@ class LogoutIfBanned
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && !empty(auth()->user()->banned_at)) {
+        if (auth()->check() && ! empty(auth()->user()->banned_at)) {
             return redirect()->route('logout');
         }
+
         return $next($request);
     }
 }

@@ -5,12 +5,13 @@ namespace App\Models\DB1;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class SysMenu extends Model
 {
     use LogsActivity;
+
     protected $fillable = [
         'name',
         'url',
@@ -42,7 +43,7 @@ class SysMenu extends Model
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('system_menus')
-            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
                 'created' => 'Menu baru dibuat',
                 'updated' => 'Data menu diperbarui',
                 'deleted' => 'Menu dihapus',

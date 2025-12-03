@@ -28,15 +28,15 @@ Route::prefix('system')
         LogoutIfBanned::class,
     ])
     ->group(function () {
-        Route::redirect("/", "/system/users");
+        Route::redirect('/', '/system/users');
 
-        Route::resource("users", ManageUserController::class);
+        Route::resource('users', ManageUserController::class);
         Route::post('users/ajax/{action}', [ManageUserController::class, 'ajaxBannedOrUnbanned'])
             ->whereIn('action', ['banned', 'unbanned']);
         Route::post('users/ajax/datagrid', [ManageUserController::class, 'ajaxDatagrid'])->name('users.ajax.datagrid');
         Route::post('users/ajax/organization-and-role', [ManageUserController::class, 'ajaxOrganizationAndRole'])->name('users.ajax.organization-and-role');
 
-        Route::resource("menus", ManageMenuController::class)->except('show');
+        Route::resource('menus', ManageMenuController::class)->except('show');
         Route::post('menus/ajax/treegrid', [ManageMenuController::class, 'ajaxDatagrid'])->name('menus.ajax.treegrid');
         Route::post('menus/status', [ManageMenuController::class, 'updateStatus'])->name('menus.status');
         Route::get('menus/ajax/tree-menu', [ManageMenuController::class, 'ajaxTreeMenu'])->name('menus.ajax.tree-menu');

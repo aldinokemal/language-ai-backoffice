@@ -28,11 +28,12 @@ class ForgotPasswordController extends Controller
      */
     public function forgotPasswordPost(Request $request)
     {
-        $key = 'password.reset.' . $request->ip();
+        $key = 'password.reset.'.$request->ip();
 
         // Check if too many attempts
         if (RateLimiter::tooManyAttempts($key, self::MAX_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn($key);
+
             return back()->withErrors([
                 'email' => sprintf('Terlalu banyak percobaan reset kata sandi. Silakan coba lagi dalam %s menit.', ceil($seconds / 60)),
             ]);
@@ -63,15 +64,15 @@ class ForgotPasswordController extends Controller
         ]);
 
         // Only send reset email if user exists, is active, verified, and not banned/deleted
-        if ($user && 
-            !$user->banned_at && 
-            $user->email_verified_at && 
-            !$user->deleted_at) {
-            
+        if ($user &&
+            ! $user->banned_at &&
+            $user->email_verified_at &&
+            ! $user->deleted_at) {
+
             // Create token and send notification
             $token = Password::broker()->createToken($user);
             $user->sendPasswordResetNotification($token);
-            
+
             Log::info('Password reset email sent', [
                 'email' => $email,
                 'user_id' => $user->id,
@@ -80,11 +81,19 @@ class ForgotPasswordController extends Controller
         } else {
             // Log failed attempts with reasons for security analysis
             $reasons = [];
-            if (!$user) $reasons[] = 'user_not_found';
-            if ($user && $user->banned_at) $reasons[] = 'user_banned';
-            if ($user && !$user->email_verified_at) $reasons[] = 'email_not_verified';
-            if ($user && $user->deleted_at) $reasons[] = 'user_deleted';
-            
+            if (! $user) {
+                $reasons[] = 'user_not_found';
+            }
+            if ($user && $user->banned_at) {
+                $reasons[] = 'user_banned';
+            }
+            if ($user && ! $user->email_verified_at) {
+                $reasons[] = 'email_not_verified';
+            }
+            if ($user && $user->deleted_at) {
+                $reasons[] = 'user_deleted';
+            }
+
             Log::warning('Password reset blocked', [
                 'email' => $email,
                 'reasons' => $reasons,
@@ -95,7 +104,7 @@ class ForgotPasswordController extends Controller
 
         // Always return same success message to prevent user enumeration
         return redirect()->route('forgot-password-success')->with([
-            'email'   => $email,
+            'email' => $email,
             'message' => 'Jika email terdaftar, tautan reset kata sandi telah dikirim.',
         ]);
     }
@@ -105,7 +114,7 @@ class ForgotPasswordController extends Controller
      */
     public function forgotPasswordSuccess()
     {
-        if (!session('email')) {
+        if (! session('email')) {
             return redirect()->route('forgot-password');
         }
 
@@ -121,7 +130,7 @@ class ForgotPasswordController extends Controller
     {
         $email = $request->query('email');
 
-        if (!$email || !$token) {
+        if (! $email || ! $token) {
             return redirect()->route('login')->withErrors([
                 'message' => 'Tautan reset kata sandi tidak valid.',
             ]);
@@ -139,8 +148,8 @@ class ForgotPasswordController extends Controller
     public function resetPasswordPost(Request $request)
     {
         $request->validate([
-            'token'    => 'required',
-            'email'    => 'required|email:rfc,dns|exists:sys_users,email',
+            'token' => 'required',
+            'email' => 'required|email:rfc,dns|exists:sys_users,email',
             'password' => [
                 'required',
                 'confirmed',
@@ -175,15 +184,16 @@ class ForgotPasswordController extends Controller
 
         session()->keep(['email']);
 
-        if (!$email) {
+        if (! $email) {
             return redirect()->route('forgot-password');
         }
 
-        $key = 'password.reset.' . $request->ip();
+        $key = 'password.reset.'.$request->ip();
 
         // Check if too many attempts
         if (RateLimiter::tooManyAttempts($key, self::MAX_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn($key);
+
             return back()->withErrors([
                 'message' => sprintf('Terlalu banyak percobaan kirim ulang email. Silakan coba lagi dalam %s menit.', ceil($seconds / 60)),
             ]);

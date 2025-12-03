@@ -74,6 +74,7 @@ class User extends Model
         if ($key && is_string($key)) {
             return new ObjectId($key);
         }
+
         return $key;
     }
 

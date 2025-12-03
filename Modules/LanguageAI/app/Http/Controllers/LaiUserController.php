@@ -23,7 +23,7 @@ class LaiUserController extends Controller
     private function defaultParser(): array
     {
         return [
-            'url'  => $this->url,
+            'url' => $this->url,
             'view' => 'languageai::users',
         ];
     }
@@ -43,14 +43,14 @@ class LaiUserController extends Controller
         $plans = MasterPlan::active()
             ->orderBy('plan_name')
             ->get()
-            ->map(fn($plan) => [
-                '_id'       => (string) $plan->_id,
-                'plan_name' => $plan->plan_name . ' (' . $plan->plan_code . ')',
+            ->map(fn ($plan) => [
+                '_id' => (string) $plan->_id,
+                'plan_name' => $plan->plan_name.' ('.$plan->plan_code.')',
             ]);
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'plans'       => $plans,
+            'plans' => $plans,
         ]);
 
         return view('languageai::users.index')->with($parser);
@@ -73,7 +73,7 @@ class LaiUserController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'data'        => $user,
+            'data' => $user,
         ]);
 
         return view('languageai::users.show')->with($parser);
@@ -86,7 +86,7 @@ class LaiUserController extends Controller
     {
         Gate::authorize(Permission::LANGUAGE_AI_USERS_UPDATE);
 
-        $user  = User::findOrFail($id);
+        $user = User::findOrFail($id);
         $plans = MasterPlan::where('is_active', true)->get();
 
         $breadcrumbs = [
@@ -97,8 +97,8 @@ class LaiUserController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'user'        => $user,
-            'plans'       => $plans,
+            'user' => $user,
+            'plans' => $plans,
         ]);
 
         return view('languageai::users.edit')->with($parser);
@@ -114,8 +114,8 @@ class LaiUserController extends Controller
         $user = User::findOrFail($id);
 
         $request->validate([
-            'name'                            => 'required|string|max:255',
-            'email'                           => [
+            'name' => 'required|string|max:255',
+            'email' => [
                 'required',
                 'email',
                 function ($attribute, $value, $fail) use ($user) {
@@ -128,22 +128,22 @@ class LaiUserController extends Controller
                     }
                 },
             ],
-            'plan_id'                         => [
+            'plan_id' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
-                    if ($value && !MasterPlan::where('_id', $value)->exists()) {
+                    if ($value && ! MasterPlan::where('_id', $value)->exists()) {
                         $fail('The selected plan is invalid.');
                     }
                 },
             ],
-            'activated_at'                    => 'nullable|boolean',
-            'alert_setting.device_login'      => 'nullable|boolean',
+            'activated_at' => 'nullable|boolean',
+            'alert_setting.device_login' => 'nullable|boolean',
             'alert_setting.importance_update' => 'nullable|boolean',
         ]);
 
         try {
-            $user->name    = $request->name;
-            $user->email   = $request->email;
+            $user->name = $request->name;
+            $user->email = $request->email;
             $user->plan_id = $request->plan_id;
 
             // Handle activated_at toggle - checkbox returns nothing when unchecked
@@ -151,7 +151,7 @@ class LaiUserController extends Controller
 
             // Handle alert settings
             $user->alert_setting = [
-                'device_login'      => $request->boolean('alert_setting.device_login', false),
+                'device_login' => $request->boolean('alert_setting.device_login', false),
                 'importance_update' => $request->boolean('alert_setting.importance_update', false),
             ];
 
@@ -177,7 +177,7 @@ class LaiUserController extends Controller
         $this->applyDatagridSorting($query, $request);
 
         $totalCount = $this->getTotalCount($query);
-        $users      = $this->getPaginatedUsers($query, $request);
+        $users = $this->getPaginatedUsers($query, $request);
 
         $formattedData = $this->formatDatagridResponse($totalCount, $users);
 
@@ -191,13 +191,13 @@ class LaiUserController extends Controller
 
     private function applyDatagridFilters($query, Request $request): void
     {
-        if (!$request->has('filter.filters')) {
+        if (! $request->has('filter.filters')) {
             return;
         }
 
         $filters = $request->input('filter.filters');
         foreach ($filters as $filterItem) {
-            if (!isset($filterItem['field']) || !isset($filterItem['value'])) {
+            if (! isset($filterItem['field']) || ! isset($filterItem['value'])) {
                 continue;
             }
 
@@ -231,14 +231,14 @@ class LaiUserController extends Controller
         $searchValue = $filterItem['value'];
 
         $query->where(function ($q) use ($searchValue) {
-            $q->where('name', 'like', '%' . $searchValue . '%')
-                ->orWhere('email', 'like', '%' . $searchValue . '%');
+            $q->where('name', 'like', '%'.$searchValue.'%')
+                ->orWhere('email', 'like', '%'.$searchValue.'%');
         });
     }
 
     private function applyEmailFilter($query, array $filterItem): void
     {
-        $query->where('email', 'like', '%' . $filterItem['value'] . '%');
+        $query->where('email', 'like', '%'.$filterItem['value'].'%');
     }
 
     private function applyPlanFilter($query, array $filterItem): void
@@ -253,7 +253,7 @@ class LaiUserController extends Controller
             return new ObjectId(trim($id));
         }, $planIds);
 
-        if (!empty($planIds)) {
+        if (! empty($planIds)) {
             $query->whereIn('plan_id', $planIds);
         }
     }
@@ -287,7 +287,7 @@ class LaiUserController extends Controller
 
     private function applyDatagridSorting($query, Request $request): void
     {
-        if (!$request->has('sort')) {
+        if (! $request->has('sort')) {
             return;
         }
 
@@ -329,16 +329,16 @@ class LaiUserController extends Controller
     {
         return [
             'total' => $totalCount,
-            'data'  => $users->map(fn(User $user) => [
-                'id'            => (string) $user->_id,
-                'name'          => $user->name,
-                'email'         => $user->email,
-                'picture'       => $user->picture ?? '/assets/media/avatars/blank.png',
-                'plan_id'       => $user->plan_id ? (string) $user->plan_id : null,
-                'plan_name'     => $user->plan?->plan_name ?? 'No Plan',
-                'is_activated'  => !is_null($user->activated_at),
+            'data' => $users->map(fn (User $user) => [
+                'id' => (string) $user->_id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'picture' => $user->picture ?? '/assets/media/avatars/blank.png',
+                'plan_id' => $user->plan_id ? (string) $user->plan_id : null,
+                'plan_name' => $user->plan?->plan_name ?? 'No Plan',
+                'is_activated' => ! is_null($user->activated_at),
                 'devices_count' => $user->devices()->count(),
-                'created_at'    => $user->created_at,
+                'created_at' => $user->created_at,
             ]),
         ];
     }
@@ -373,7 +373,7 @@ class LaiUserController extends Controller
             ->whereBetween('date', [$startDate, $endDate])
             ->orderBy('date', 'asc')
             ->get()
-            ->keyBy(fn($item) => Carbon::parse($item->date)->format('Y-m-d'));
+            ->keyBy(fn ($item) => Carbon::parse($item->date)->format('Y-m-d'));
 
         // Create a period of all dates in range
         $period = CarbonPeriod::create($startDate, $endDate);
@@ -385,16 +385,16 @@ class LaiUserController extends Controller
             $usage = $chatUsages->get($dateKey);
 
             $data[] = [
-                'date'  => $dateKey,
+                'date' => $dateKey,
                 'usage' => $usage ? (int) $usage->usage : 0,
             ];
         }
 
         return response()->json([
-            'data'       => $data,
+            'data' => $data,
             'start_date' => $startDate->format('Y-m-d'),
-            'end_date'   => $endDate->format('Y-m-d'),
-            'total'      => array_sum(array_column($data, 'usage')),
+            'end_date' => $endDate->format('Y-m-d'),
+            'total' => array_sum(array_column($data, 'usage')),
         ]);
     }
 }

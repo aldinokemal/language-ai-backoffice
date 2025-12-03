@@ -3,15 +3,16 @@
 namespace Modules\Home\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class OtpUpdateEmail extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public string $otp;
+
     public string $email;
 
     /**
@@ -37,16 +38,16 @@ class OtpUpdateEmail extends Notification implements ShouldQueue
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Verifikasi Perubahan Email - ' . config('app.name'))
-            ->greeting('Halo ' . $notifiable->name . ',')
-            ->line('Kami menerima permintaan untuk mengubah alamat email Anda ke: **' . $this->email . '**')
+            ->subject('Verifikasi Perubahan Email - '.config('app.name'))
+            ->greeting('Halo '.$notifiable->name.',')
+            ->line('Kami menerima permintaan untuk mengubah alamat email Anda ke: **'.$this->email.'**')
             ->line('Untuk menyelesaikan perubahan ini, silakan masukkan kode OTP berikut:')
-            ->line('## **' . $this->otp . '**')
+            ->line('## **'.$this->otp.'**')
             ->line('Kode OTP ini akan kedaluwarsa dalam **5 menit**.')
             ->line('Jika Anda tidak melakukan permintaan ini, silakan abaikan email ini atau hubungi tim dukungan kami.')
-            ->line('Terima kasih telah menggunakan ' . config('app.name') . '!')
+            ->line('Terima kasih telah menggunakan '.config('app.name').'!')
             ->salutation('Salam,  
-Tim ' . config('app.name'));
+Tim '.config('app.name'));
     }
 
     /**
@@ -58,7 +59,7 @@ Tim ' . config('app.name'));
             'type' => 'email_otp',
             'otp' => $this->otp,
             'email' => $this->email,
-            'message' => 'Kode OTP untuk perubahan email telah dikirim'
+            'message' => 'Kode OTP untuk perubahan email telah dikirim',
         ];
     }
 }

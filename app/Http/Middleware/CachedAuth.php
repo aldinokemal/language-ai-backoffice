@@ -29,6 +29,7 @@ class CachedAuth
                 now()->addMinutes(5),
                 function () use ($userId) {
                     \Log::info('CachedAuth: Cache MISS - Loading user from database', ['user_id' => $userId]);
+
                     return SysUser::with(['roles', 'permissions'])->find($userId);
                 }
             );
@@ -44,6 +45,7 @@ class CachedAuth
             } else {
                 // User not found, clear session
                 session()->forget('user_id');
+
                 return redirect()->route('login');
             }
         } else {

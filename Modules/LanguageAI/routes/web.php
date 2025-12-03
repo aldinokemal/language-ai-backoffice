@@ -3,9 +3,9 @@
 use App\Http\Middleware\CachedAuth;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Support\Facades\Route;
-use Modules\LanguageAI\Http\Controllers\LaiUserController;
-use Modules\LanguageAI\Http\Controllers\LaiPlanController;
 use Modules\LanguageAI\Http\Controllers\LaiDashboardController;
+use Modules\LanguageAI\Http\Controllers\LaiPlanController;
+use Modules\LanguageAI\Http\Controllers\LaiUserController;
 
 Route::middleware([CachedAuth::class, EnsureEmailIsVerified::class])
     ->prefix('language-ai')

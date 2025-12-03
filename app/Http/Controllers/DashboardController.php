@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Models\DB1\SysUser;
+use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
@@ -12,32 +11,32 @@ class DashboardController extends Controller
     {
         $stats = $this->getDashboardStats();
         $recentActivity = $this->getRecentActivity();
-        
+
         return view('dashboard', compact('stats', 'recentActivity'));
     }
-    
+
     public function stats(): JsonResponse
     {
         return response()->json($this->getDashboardStats());
     }
-    
+
     private function getDashboardStats(): array
     {
         // Get basic user statistics
         $totalUsers = SysUser::count();
         $activeUsers = SysUser::where('status', 'active')->count();
         $newUsersThisMonth = SysUser::whereMonth('created_at', now()->month)
-                                  ->whereYear('created_at', now()->year)
-                                  ->count();
-        
+            ->whereYear('created_at', now()->year)
+            ->count();
+
         $lastMonthUsers = SysUser::whereMonth('created_at', now()->subMonth()->month)
-                                ->whereYear('created_at', now()->subMonth()->year)
-                                ->count();
-        
-        $userGrowth = $lastMonthUsers > 0 
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->count();
+
+        $userGrowth = $lastMonthUsers > 0
             ? round((($newUsersThisMonth - $lastMonthUsers) / $lastMonthUsers) * 100, 1)
             : 0;
-        
+
         return [
             'total_users' => $totalUsers,
             'active_users' => $activeUsers,
@@ -49,7 +48,7 @@ class DashboardController extends Controller
             'tasks_completion_rate' => 0,
         ];
     }
-    
+
     private function getRecentActivity()
     {
         // Placeholder - implement when activity tracking is available

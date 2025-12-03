@@ -107,14 +107,14 @@ return [
 
     'img_profile' => [
         'cacheKey' => 'IMG_PROFILE_%s',
-        'ttl'      => 60 * 24 * 3, // minute
+        'ttl' => 60 * 24 * 3, // minute
     ],
-    'img_org'     => [
+    'img_org' => [
         'cacheKey' => 'IMG_ORG_%s',
-        'ttl'      => 60 * 24 * 3, // minute
+        'ttl' => 60 * 24 * 3, // minute
     ],
     'email_otp' => [
         'cacheKey' => 'EMAIL_OTP_%s',
-        'ttl'      => 60 * 5, // minute
+        'ttl' => 60 * 5, // minute
     ],
 ];

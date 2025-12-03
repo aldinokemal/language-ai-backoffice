@@ -4,13 +4,13 @@ namespace Modules\Public\Http\Controllers\Api;
 
 use App\Enums\StorageSource;
 use App\Http\Controllers\Controller;
+use App\Models\DB1\ClassAttendance;
 use App\Models\DB1\ClassModel;
 use App\Models\DB1\ClassParticipant;
 use App\Models\DB1\ClassSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Models\DB1\ClassAttendance;
 
 class EventRegistrationController extends Controller
 {
@@ -18,12 +18,13 @@ class EventRegistrationController extends Controller
     {
         $event = ClassModel::with('schedules')->find(customDecrypt($id));
 
-        if (!$event) {
+        if (! $event) {
             return response()->json([
                 'message' => 'Event not found',
-                'data'    => null
+                'data' => null,
             ], 404);
         }
+
         return responseJSON(
             'Event detail',
             encryptModel($event),
@@ -34,10 +35,10 @@ class EventRegistrationController extends Controller
     {
         $event = ClassModel::find(customDecrypt($id));
 
-        if (!$event) {
+        if (! $event) {
             return response()->json([
                 'message' => 'Event not found',
-                'data'    => null
+                'data' => null,
             ], 404);
         }
 
@@ -46,9 +47,10 @@ class EventRegistrationController extends Controller
             $face_recognition_data_path = array_map(function ($item) {
                 return Storage::disk(StorageSource::S3->value)->temporaryUrl($item, now()->addMinutes(5));
             }, $face_recognition_data_path);
+
             return [
-                'id'                         => customEncrypt($participant->id),
-                'name'                       => $participant->name,
+                'id' => customEncrypt($participant->id),
+                'name' => $participant->name,
                 'face_recognition_data_path' => $face_recognition_data_path,
             ];
         });
@@ -62,24 +64,24 @@ class EventRegistrationController extends Controller
     public function eventRegistration($id, Request $request)
     {
         $input = $request->validate([
-            'name'         => 'required|string|max:255',
-            'email'        => 'required|email|max:255',
-            'phone'        => 'required|string|max:255',
-            'company'      => 'required|string|max:255',
-            'position'     => 'required|string|max:255',
-            'signature'    => 'required|string',
-            'photo_front'  => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
-            'photo_side'   => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
-            'photo_top'    => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:255',
+            'company' => 'required|string|max:255',
+            'position' => 'required|string|max:255',
+            'signature' => 'required|string',
+            'photo_front' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'photo_side' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'photo_top' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
             'photo_bottom' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
         ]);
 
         $event = ClassModel::find(customDecrypt($id));
 
-        if (!$event) {
+        if (! $event) {
             return response()->json([
                 'message' => 'Event not found',
-                'data'    => null
+                'data' => null,
             ], 404);
         }
 
@@ -89,7 +91,7 @@ class EventRegistrationController extends Controller
         );
 
         $uploadedPaths = [];
-        $photoFields   = [
+        $photoFields = [
             'photo_front',
             'photo_side',
             'photo_top',
@@ -98,10 +100,10 @@ class EventRegistrationController extends Controller
 
         foreach ($photoFields as $field) {
             if ($request->hasFile($field)) {
-                $file      = $request->file($field);
+                $file = $request->file($field);
                 $extension = $file->getClientOriginalExtension() ?: 'jpg';
-                $filename  = $field . '-' . Str::uuid() . '.' . $extension;
-                $basePath  = 'training/' . $event->id . '/participant/' . $participant->id;
+                $filename = $field.'-'.Str::uuid().'.'.$extension;
+                $basePath = 'training/'.$event->id.'/participant/'.$participant->id;
 
                 // Store to S3 and capture the object key (path)
                 $objectKey = Storage::disk(StorageSource::S3->value)->putFileAs($basePath, $file, $filename);
@@ -111,15 +113,15 @@ class EventRegistrationController extends Controller
             }
         }
 
-        if (!empty($uploadedPaths)) {
-            $existing                                = $participant->face_recognition_data_path ?? [];
+        if (! empty($uploadedPaths)) {
+            $existing = $participant->face_recognition_data_path ?? [];
             $participant->face_recognition_data_path = array_merge($existing, $uploadedPaths);
             $participant->save();
         }
 
         return response()->json([
             'message' => 'Event registration success',
-            'data'    => [
+            'data' => [
                 'face_recognition_data_path' => $participant->face_recognition_data_path,
             ],
         ]);
@@ -132,7 +134,7 @@ class EventRegistrationController extends Controller
         $today = now();
 
         $participant = ClassParticipant::query()->where('class_id', $id)->where('id', $participant_id)->first();
-        if (!$participant) {
+        if (! $participant) {
             return responseJSON(
                 'Participant not found',
                 null,
@@ -146,7 +148,7 @@ class EventRegistrationController extends Controller
             ->whereDate('start_time', $today->toDateString())
             ->first();
 
-        if (!$schedule) {
+        if (! $schedule) {
             return responseJSON(
                 'Presence is not available today for this class',
                 null,
@@ -160,8 +162,8 @@ class EventRegistrationController extends Controller
             ->where('schedule_id', $schedule->id)
             ->first();
 
-        if (!$classAttendance) {
-            $classAttendance = new ClassAttendance();
+        if (! $classAttendance) {
+            $classAttendance = new ClassAttendance;
             $classAttendance->class_id = $id;
             $classAttendance->class_participant_id = $participant_id;
             $classAttendance->schedule_id = $schedule->id;
@@ -173,5 +175,4 @@ class EventRegistrationController extends Controller
             null,
         );
     }
-
 }

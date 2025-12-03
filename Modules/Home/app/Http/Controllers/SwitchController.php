@@ -40,7 +40,7 @@ class SwitchController extends Controller
     public function switchRole(Request $request)
     {
         $defaultOrganization = session('org');
-        $defaultRole         = $defaultOrganization->organizationRoles()->where('role_id', decryptOrAbort($request->role_id))->first();
+        $defaultRole = $defaultOrganization->organizationRoles()->where('role_id', decryptOrAbort($request->role_id))->first();
 
         // update default role in database
         $defaultRole->is_default = true;

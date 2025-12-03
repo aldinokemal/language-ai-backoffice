@@ -3,17 +3,18 @@
 namespace Modules\Auth\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Modules\Auth\Traits\SessionTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use Modules\Auth\Traits\SessionTrait;
 
 class LoginController extends Controller
 {
     use SessionTrait;
+
     private string $module = __CLASS__;
 
     private string $url = 'auth/login';
@@ -23,7 +24,7 @@ class LoginController extends Controller
     private function defaultParser(): array
     {
         return [
-            'url'    => $this->url,
+            'url' => $this->url,
             'module' => $this->module,
         ];
     }
@@ -35,10 +36,10 @@ class LoginController extends Controller
 
     public function loginPost(Request $request)
     {
-        $key = 'login.' . $request->ip();
+        $key = 'login.'.$request->ip();
         if (RateLimiter::tooManyAttempts($key, self::MAX_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn($key);
-            
+
             // Log lockout event for security monitoring
             Log::warning('Login rate limit exceeded - IP locked out', [
                 'ip' => $request->ip(),
@@ -46,7 +47,7 @@ class LoginController extends Controller
                 'lockout_duration' => $seconds,
                 'max_attempts' => self::MAX_ATTEMPTS,
             ]);
-            
+
             throw ValidationException::withMessages([
                 'message' => [
                     sprintf('Terlalu banyak percobaan login. Silakan coba lagi dalam %s menit.', ceil($seconds / 60)),
@@ -55,20 +56,20 @@ class LoginController extends Controller
         }
 
         $credentials = $request->validate([
-            'email'    => 'required|email|max:255',
+            'email' => 'required|email|max:255',
             'password' => 'required|string',
         ]);
 
         $attemptData = [
-            'email'    => strtolower($credentials['email']),
+            'email' => strtolower($credentials['email']),
             'password' => $credentials['password'],
         ];
 
         $remember = $request->boolean('check'); // Based on the form field name 'check'
 
-        if (!Auth::attempt($attemptData, $remember)) {
+        if (! Auth::attempt($attemptData, $remember)) {
             RateLimiter::hit($key);
-            
+
             // Log failed login attempts
             Log::warning('Failed login attempt', [
                 'email' => $attemptData['email'],
@@ -76,7 +77,7 @@ class LoginController extends Controller
                 'user_agent' => $request->userAgent(),
                 'timestamp' => now(),
             ]);
-            
+
             return back()->withErrors([
                 'message' => 'Email atau password salah.',
             ])->withInput($request->except('password'));
@@ -87,7 +88,7 @@ class LoginController extends Controller
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-            
+
             // Log banned user login attempt
             Log::warning('Banned user login attempt', [
                 'user_id' => $user->id,
@@ -96,7 +97,7 @@ class LoginController extends Controller
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
-            
+
             return back()->withErrors([
                 'message' => 'Akun Anda telah diblokir.',
             ]);
@@ -143,16 +144,17 @@ class LoginController extends Controller
 
         // Flush all session data first
         $request->session()->flush();
-        
+
         // Then detach roles and logout
         $user->roles()->detach();
         Auth::logout();
-        
+
         // Regenerate session ID for security
         $request->session()->regenerateToken();
 
         // Preserve locale setting
         session(['locale' => $locale]);
+
         return redirect()->route('login');
     }
 }

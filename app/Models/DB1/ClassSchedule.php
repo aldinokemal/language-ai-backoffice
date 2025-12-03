@@ -72,10 +72,10 @@ class ClassSchedule extends Model
         $minutes = $this->duration_in_minutes % 60;
 
         if ($hours > 0) {
-            return $hours . 'j ' . ($minutes > 0 ? $minutes . 'm' : '');
+            return $hours.'j '.($minutes > 0 ? $minutes.'m' : '');
         }
 
-        return $minutes . 'm';
+        return $minutes.'m';
     }
 
     /**

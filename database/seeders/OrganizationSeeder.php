@@ -13,11 +13,11 @@ class OrganizationSeeder extends Seeder
     public function run(): void
     {
         SysOrganization::factory()->create([
-            'name' => 'Perumda Tirta Manuntung Balikpapan',
-            'address' => 'Graha Tirta Building, Jl. Ruhui Rahayu I, Balikpapan, Kalimantan Timur',
-            'phone' => '(0542) 7218831 / 7218832',
-            'email' => 'humas@tirtamanuntung.co.id',
-            'website' => 'https://www.tirtamanuntung.co.id',
+            'name' => 'Language AI',
+            'address' => 'Yogyakarta',
+            'phone' => '-',
+            'email' => 'info@language-ai.app',
+            'website' => 'https://www.language-ai.app',
         ]);
     }
 }

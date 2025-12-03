@@ -1,4 +1,4 @@
-IMAGE_NAME=registry.hydrogendioxide.net/languageai/backoffice
+IMAGE_NAME=raspberrypi.tail1d23a.ts.net:5000/languageai/backoffice
 DOCKERFILE=./docker/dockerfile/app.Dockerfile
 BASE_DOCKERFILE=./docker/dockerfile/base.Dockerfile
 VERSION ?= latest

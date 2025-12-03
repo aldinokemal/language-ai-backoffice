@@ -22,24 +22,24 @@ class UserSeeder extends Seeder
 
         // Create Superadmin Role
         $listPermission = Permission::get();
-        $role           = Role::create(['name' => BuiltInRole::SUPER_ADMIN->value, 'description' => $faker->sentence(3)]);
+        $role = Role::create(['name' => BuiltInRole::SUPER_ADMIN->value, 'description' => $faker->sentence(3)]);
         $role->syncPermissions($listPermission);
 
         $user = SysUser::factory()->create([
-            'name'     => 'Aldino Kemal',
+            'name' => 'Aldino Kemal',
             'username' => 'aldinokemal',
-            'email'    => 'aldinokemal2104@gmail.com',
+            'email' => 'aldinokemal2104@gmail.com',
         ]);
 
         // Add User Organization
         $defaultOrg = $user->organizations()->create([
             'organization_id' => 1,
-            'is_default'      => true,
+            'is_default' => true,
         ]);
 
         // Grant Role to User
         $user->organizations->first()->organizationRoles()->create([
-            'role_id'    => 1,
+            'role_id' => 1,
             'is_default' => true,
         ]);
 

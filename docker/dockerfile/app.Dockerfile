@@ -53,7 +53,7 @@ RUN rm -rf bootstrap/cache/*.php || true
 # Ensure writable directories and proper permissions
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs \
     && mkdir -p bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache app \
+    && chown -R www-data:www-data storage bootstrap/cache app Modules resources \
     && chmod -R ug+rwX storage bootstrap/cache app \
     && chmod -R 775 storage/logs
 

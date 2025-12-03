@@ -3,9 +3,9 @@
 namespace App\Models\DB1;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Spatie\Permission\Models\Role;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Models\Role;
 
 class SysRole extends Role
 {
@@ -23,7 +23,7 @@ class SysRole extends Role
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('system_roles')
-            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
                 'created' => 'Role baru dibuat',
                 'updated' => 'Data role diperbarui',
                 'deleted' => 'Role dihapus',

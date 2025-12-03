@@ -13,9 +13,9 @@ use App\Models\DB1\SysUserOrganization;
 use App\Models\DB1\SysUserOrganizationRole;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Auth;
 
 class ManageRoleController extends Controller
 {
@@ -24,7 +24,7 @@ class ManageRoleController extends Controller
     private function defaultParser(): array
     {
         return [
-            'url'  => $this->url,
+            'url' => $this->url,
             'view' => 'system::role',
         ];
     }
@@ -39,25 +39,24 @@ class ManageRoleController extends Controller
         ];
 
         $organizationId = $request->input('organization_id') ?? 1;
-        $organization   = SysOrganization::findOrFail(
+        $organization = SysOrganization::findOrFail(
             $organizationId === 1 ? 1 : customDecrypt($organizationId)
         );
 
-
         $roles = SysRole::query()->where('organization_id', $organization->id)->get();
         foreach ($roles as $role) {
-            $grantedUsers        = SysUserOrganizationRole::query()->where('role_id', $role->id)->count();
+            $grantedUsers = SysUserOrganizationRole::query()->where('role_id', $role->id)->count();
             $role->granted_users = $grantedUsers;
             $role->permissions_count = $role->permissions()->count();
         }
 
         $parser = array_merge($this->defaultParser(), [
-            'breadcrumbs'  => $breadcrumbs,
+            'breadcrumbs' => $breadcrumbs,
             'organization' => $organization,
-            'roles'        => $roles,
+            'roles' => $roles,
         ]);
 
-        return view("system::role.index")->with($parser);
+        return view('system::role.index')->with($parser);
     }
 
     /**
@@ -69,23 +68,23 @@ class ManageRoleController extends Controller
         $organizationId = customDecrypt($request->get('organization_id'));
 
         $organization = SysOrganization::find($organizationId);
-        if (!$organization) {
+        if (! $organization) {
             return redirect($this->url);
         }
 
         $breadcrumbs = [
             new Breadcrumbs('Sistem', $this->url),
             new Breadcrumbs('Manajemen Peran', $this->url),
-            new Breadcrumbs('Buat Peran', $this->url . '/create'),
+            new Breadcrumbs('Buat Peran', $this->url.'/create'),
         ];
 
         $parser = array_merge($this->defaultParser(), [
-            'breadcrumbs'  => $breadcrumbs,
+            'breadcrumbs' => $breadcrumbs,
             'organization' => $organization,
-            'role'         => null,
+            'role' => null,
         ]);
 
-        return view("system::role.upsert")->with($parser);
+        return view('system::role.upsert')->with($parser);
     }
 
     /**
@@ -97,32 +96,34 @@ class ManageRoleController extends Controller
 
         $input = $request->validate([
             'organization_id' => 'required',
-            'name'            => 'required|string|max:255',
-            'guard_name'      => 'required|string|max:255',
-            'description'     => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
+            'guard_name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:255',
         ]);
 
         $input['organization_id'] = customDecrypt($input['organization_id']);
 
         $organization = SysOrganization::find($input['organization_id']);
-        if (!$organization) {
+        if (! $organization) {
             return responseJSON('Organisasi tidak ditemukan', 404);
         }
 
         try {
             DB::beginTransaction();
             SysRole::create([
-                'name'            => $input['name'],
-                'guard_name'      => $input['guard_name'],
+                'name' => $input['name'],
+                'guard_name' => $input['guard_name'],
                 'organization_id' => $organization->id,
-                'description'     => $input['description'],
+                'description' => $input['description'],
             ]);
 
             DB::commit();
+
             return responseJSON('Peran berhasil dibuat');
         } catch (Exception $e) {
             DB::rollBack();
             logError($e);
+
             return responseJSON('Terjadi kesalahan saat membuat peran', 500);
         }
 
@@ -133,8 +134,8 @@ class ManageRoleController extends Controller
      */
     public function edit($id)
     {
-        $id          = customDecrypt($id);
-        $role        = SysRole::with('organization')->findOrFail($id);
+        $id = customDecrypt($id);
+        $role = SysRole::with('organization')->findOrFail($id);
         $breadcrumbs = [
             new Breadcrumbs('Sistem', $this->url),
             new Breadcrumbs('Manajemen Peran', $this->url),
@@ -144,10 +145,10 @@ class ManageRoleController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'role'        => $role,
+            'role' => $role,
         ]);
 
-        return view("system::role.upsert")->with($parser);
+        return view('system::role.upsert')->with($parser);
     }
 
     /**
@@ -158,17 +159,17 @@ class ManageRoleController extends Controller
         Gate::authorize(Permission::SYSTEM_ROLES_UPDATE);
 
         $input = $request->validate([
-            "name"        => "required|string|max:255",
-            "guard_name"  => "required|string|max:255",
-            "description" => "nullable|string|max:255",
+            'name' => 'required|string|max:255',
+            'guard_name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:255',
         ]);
 
-        $id   = customDecrypt($id);
+        $id = customDecrypt($id);
         $role = SysRole::findOrFail($id);
 
         $role->update([
-            'name'        => $input['name'],
-            'guard_name'  => $input['guard_name'],
+            'name' => $input['name'],
+            'guard_name' => $input['guard_name'],
             'description' => $input['description'],
         ]);
 
@@ -182,7 +183,7 @@ class ManageRoleController extends Controller
     {
         Gate::authorize(Permission::SYSTEM_ROLES_DELETE);
 
-        $id   = customDecrypt($id);
+        $id = customDecrypt($id);
         $role = SysRole::findOrFail($id);
 
         // delete role has permission
@@ -204,8 +205,8 @@ class ManageRoleController extends Controller
             'role_id' => 'required',
         ]);
 
-        $roleId            = customDecrypt($request->input('role_id'));
-        $role              = SysRole::find($roleId);
+        $roleId = customDecrypt($request->input('role_id'));
+        $role = SysRole::find($roleId);
         $rolePermissionIds = $role ? $role->permissions()->get()->pluck('id')->toArray() : [];
 
         $permissions = SysPermission::query()
@@ -229,8 +230,8 @@ class ManageRoleController extends Controller
 
         // Apply pagination
         $pageSize = $request->input('pageSize', 20);
-        $page     = $request->input('page', 1);
-        $skip     = ($page - 1) * $pageSize;
+        $page = $request->input('page', 1);
+        $skip = ($page - 1) * $pageSize;
 
         $data = $permissions->skip($skip)
             ->take($pageSize)
@@ -238,17 +239,17 @@ class ManageRoleController extends Controller
 
         $formatResponse = $data->map(function ($item) use ($rolePermissionIds) {
             return [
-                'id'         => customEncrypt($item->id),
-                'name'       => $item->name,
-                'alias'      => $item->alias,
+                'id' => customEncrypt($item->id),
+                'name' => $item->name,
+                'alias' => $item->alias,
                 'guard_name' => $item->guard_name,
-                'menu_name'  => $item->menu->name,
-                'selected'   => in_array($item->id, $rolePermissionIds),
+                'menu_name' => $item->menu->name,
+                'selected' => in_array($item->id, $rolePermissionIds),
             ];
         });
 
         return response()->json([
-            'data'  => $formatResponse,
+            'data' => $formatResponse,
             'total' => $total,
         ]);
     }
@@ -261,8 +262,8 @@ class ManageRoleController extends Controller
             'role_id' => 'required',
         ]);
 
-        $roleId         = customDecrypt($request->input('role_id'));
-        $role           = SysRole::find($roleId);
+        $roleId = customDecrypt($request->input('role_id'));
+        $role = SysRole::find($roleId);
         $organizationId = $role->organization_id;
 
         $query = SysUser::query()
@@ -285,31 +286,31 @@ class ManageRoleController extends Controller
         if ($request->has('filter.filters')) {
             $filter = $request->input('filter.filters');
             foreach ($filter as $filterItem) {
-                if (!isset($filterItem['field']) || !isset($filterItem['value'])) {
+                if (! isset($filterItem['field']) || ! isset($filterItem['value'])) {
                     continue;
                 }
 
                 switch ($filterItem['field']) {
                     case 'name':
-                        $query->where('sys_users.name', 'ilike', '%' . strtolower($filterItem['value']) . '%');
+                        $query->where('sys_users.name', 'ilike', '%'.strtolower($filterItem['value']).'%');
                         break;
                     case 'email':
-                        $query->where('sys_users.email', 'ilike', '%' . strtolower($filterItem['value']) . '%');
+                        $query->where('sys_users.email', 'ilike', '%'.strtolower($filterItem['value']).'%');
                         break;
                 }
             }
         }
 
         $totalCount = $query->count();
-        $users      = $query->skip($request->input('skip'))->take($request->input('take'))->get();
+        $users = $query->skip($request->input('skip'))->take($request->input('take'))->get();
 
         $formattedData = [
             'total' => $totalCount,
-            'data'  => $users->map(function ($user) use ($roleId) {
+            'data' => $users->map(function ($user) {
                 return [
-                    'id'       => customEncrypt($user->id),
-                    'name'     => $user->name,
-                    'email'    => $user->email,
+                    'id' => customEncrypt($user->id),
+                    'name' => $user->name,
+                    'email' => $user->email,
                     'selected' => $user->selected,
                 ];
             }),
@@ -325,7 +326,7 @@ class ManageRoleController extends Controller
     {
         Gate::authorize(Permission::SYSTEM_ROLES_UPDATE);
 
-        $id   = customDecrypt($id);
+        $id = customDecrypt($id);
         $role = SysRole::findOrFail($id);
 
         try {
@@ -359,10 +360,12 @@ class ManageRoleController extends Controller
                 ->log('Permission role diperbarui');
 
             DB::commit();
+
             return responseJSON('Izin peran berhasil diperbarui');
         } catch (Exception $e) {
             DB::rollBack();
             logError($e);
+
             return responseJSON($e->getMessage(), 500);
         }
     }
@@ -371,7 +374,7 @@ class ManageRoleController extends Controller
     {
         Gate::authorize(Permission::SYSTEM_ROLES_UPDATE);
 
-        $id   = customDecrypt($id);
+        $id = customDecrypt($id);
         $role = SysRole::findOrFail($id);
 
         try {
@@ -390,7 +393,7 @@ class ManageRoleController extends Controller
 
             // Remove users that are no longer selected
             $existingRecords->each(function ($record) use ($userIds, &$removedUserIds) {
-                if (!in_array($record->userOrganization->user_id, $userIds)) {
+                if (! in_array($record->userOrganization->user_id, $userIds)) {
                     $removedUserIds[] = $record->userOrganization->user_id;
                     $record->delete();
                 }
@@ -402,17 +405,16 @@ class ManageRoleController extends Controller
             foreach ($newUserIds as $userId) {
                 // First get or create user organization record
                 $userOrg = SysUserOrganization::firstOrCreate([
-                    'user_id'         => $userId,
+                    'user_id' => $userId,
                     'organization_id' => $role->organization_id,
                 ], [
                     'is_default' => true,
                 ]);
 
-
                 // Then create user organization role with the user_organization_id
                 SysUserOrganizationRole::updateOrCreate([
                     'user_organization_id' => $userOrg->id,
-                    'role_id'              => $role->id,
+                    'role_id' => $role->id,
                 ], ['is_default' => true]);
 
                 // set false is_default another Org Role if exist
@@ -422,7 +424,7 @@ class ManageRoleController extends Controller
             }
 
             // Log user-role assignment changes
-            if (!empty($removedUserIds) || !empty($newUserIds)) {
+            if (! empty($removedUserIds) || ! empty($newUserIds)) {
                 $removedUsers = SysUser::whereIn('id', $removedUserIds)->pluck('name', 'id')->toArray();
                 $addedUsers = SysUser::whereIn('id', $newUserIds)->pluck('name', 'id')->toArray();
 
@@ -443,10 +445,12 @@ class ManageRoleController extends Controller
             }
 
             DB::commit();
+
             return responseJSON('Pengguna peran berhasil diperbarui');
         } catch (Exception $e) {
             DB::rollBack();
             logError($e);
+
             return responseJSON($e->getMessage(), 500);
         }
     }

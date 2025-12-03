@@ -19,7 +19,7 @@ class LaiPlanController extends Controller
     private function defaultParser(): array
     {
         return [
-            'url'  => $this->url,
+            'url' => $this->url,
             'view' => 'languageai::plans',
         ];
     }
@@ -54,16 +54,16 @@ class LaiPlanController extends Controller
 
         Gate::authorize($permission);
 
-        $plan        = null;
-        $title       = 'Create Plan';
+        $plan = null;
+        $title = 'Create Plan';
         $breadcrumbs = [
             new Breadcrumbs('Language AI', '/language-ai'),
             new Breadcrumbs('Plans', $this->url),
         ];
 
         if ($id) {
-            $plan          = MasterPlan::findOrFail($id);
-            $title         = 'Edit Plan';
+            $plan = MasterPlan::findOrFail($id);
+            $title = 'Edit Plan';
             $breadcrumbs[] = new Breadcrumbs('Edit Plan');
         } else {
             $breadcrumbs[] = new Breadcrumbs('Create Plan');
@@ -71,8 +71,8 @@ class LaiPlanController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'plan'        => $plan,
-            'title'       => $title,
+            'plan' => $plan,
+            'title' => $title,
         ]);
 
         return view('languageai::plans.upsert')->with($parser);
@@ -87,8 +87,8 @@ class LaiPlanController extends Controller
             $data = $request->validated();
 
             // Handle booleans
-            $data['is_active']    = $request->boolean('is_active');
-            $data['is_popular']   = $request->boolean('is_popular');
+            $data['is_active'] = $request->boolean('is_active');
+            $data['is_popular'] = $request->boolean('is_popular');
             $data['is_displayed'] = $request->boolean('is_displayed');
 
             // Handle features (remove empty)
@@ -150,9 +150,9 @@ class LaiPlanController extends Controller
             foreach ($request->input('filter.filters') as $filter) {
                 if (isset($filter['field']) && isset($filter['value'])) {
                     if ($filter['field'] === 'plan_name') {
-                        $query->where('plan_name', 'like', '%' . $filter['value'] . '%');
+                        $query->where('plan_name', 'like', '%'.$filter['value'].'%');
                     } elseif ($filter['field'] === 'plan_code') {
-                        $query->where('plan_code', 'like', '%' . $filter['value'] . '%');
+                        $query->where('plan_code', 'like', '%'.$filter['value'].'%');
                     } elseif ($filter['field'] === 'is_active') {
                         $value = $filter['value'] === 'true';
                         $query->where('is_active', $value);
@@ -170,25 +170,25 @@ class LaiPlanController extends Controller
         }
 
         $total = $query->count();
-        $data  = $query->skip($request->input('skip', 0))
+        $data = $query->skip($request->input('skip', 0))
             ->take($request->input('take', 25))
             ->get()
-            ->map(fn($item) => [
-                'id'           => (string) $item->_id,
-                'plan_name'    => $item->plan_name,
-                'plan_code'    => $item->plan_code,
-                'price'        => $item->price,
-                'currency'     => $item->currency,
-                'interval'     => $item->interval,
-                'is_active'    => $item->is_active,
-                'is_popular'   => $item->is_popular,
+            ->map(fn ($item) => [
+                'id' => (string) $item->_id,
+                'plan_name' => $item->plan_name,
+                'plan_code' => $item->plan_code,
+                'price' => $item->price,
+                'currency' => $item->currency,
+                'interval' => $item->interval,
+                'is_active' => $item->is_active,
+                'is_popular' => $item->is_popular,
                 'is_displayed' => $item->is_displayed,
-                'created_at'   => $item->created_at,
+                'created_at' => $item->created_at,
             ]);
 
         return response()->json([
             'total' => $total,
-            'data'  => $data,
+            'data' => $data,
         ]);
     }
 }

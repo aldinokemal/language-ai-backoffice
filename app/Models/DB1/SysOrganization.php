@@ -5,14 +5,13 @@ namespace App\Models\DB1;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class SysOrganization extends Model
 {
-    use SoftDeletes, HasFactory, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -42,7 +41,7 @@ class SysOrganization extends Model
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('system_organizations')
-            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
                 'created' => 'Organisasi baru dibuat',
                 'updated' => 'Data organisasi diperbarui',
                 'deleted' => 'Organisasi dihapus',

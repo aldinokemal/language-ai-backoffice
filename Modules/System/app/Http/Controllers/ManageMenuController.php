@@ -8,8 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Models\DB1\SysMenu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class ManageMenuController extends Controller
 {
@@ -18,7 +18,7 @@ class ManageMenuController extends Controller
     private function defaultParser(): array
     {
         return [
-            'url'  => $this->url,
+            'url' => $this->url,
             'view' => 'system::menu',
         ];
     }
@@ -36,7 +36,7 @@ class ManageMenuController extends Controller
             'breadcrumbs' => $breadcrumbs,
         ]);
 
-        return view("system::menu.index")->with($parser);
+        return view('system::menu.index')->with($parser);
     }
 
     /**
@@ -54,10 +54,10 @@ class ManageMenuController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'menu'        => null,
+            'menu' => null,
         ]);
 
-        return view("system::menu.upsert")->with($parser);
+        return view('system::menu.upsert')->with($parser);
     }
 
     /**
@@ -68,16 +68,16 @@ class ManageMenuController extends Controller
         Gate::authorize(Permission::SYSTEM_MENUS_UPDATE);
 
         $input = $request->validate([
-            'name'                   => 'required|string|max:255',
-            'url'                    => 'required|string|max:255',
-            'icon'                   => 'nullable|string|max:255',
-            'parent_id'              => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'url' => 'required|string|max:255',
+            'icon' => 'nullable|string|max:255',
+            'parent_id' => 'nullable|string',
             'show_if_has_permission' => 'nullable|string|max:255',
-            'order'                  => 'required|integer',
-            'is_active'              => 'required|boolean',
+            'order' => 'required|integer',
+            'is_active' => 'required|boolean',
         ]);
 
-        if (!empty($input['parent_id'])) {
+        if (! empty($input['parent_id'])) {
             $input['parent_id'] = customDecrypt($input['parent_id']);
         }
 
@@ -99,6 +99,7 @@ class ManageMenuController extends Controller
         return redirect($this->url)
             ->with('message', 'Menu berhasil dibuat');
     }
+
     /**
      * Show the form for editing the specified resource.
      */
@@ -106,7 +107,7 @@ class ManageMenuController extends Controller
     {
         Gate::authorize(Permission::SYSTEM_MENUS_UPDATE);
 
-        $id   = customDecrypt($id);
+        $id = customDecrypt($id);
         $menu = SysMenu::findOrFail($id);
 
         $breadcrumbs = [
@@ -117,10 +118,10 @@ class ManageMenuController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'menu'        => $menu,
+            'menu' => $menu,
         ]);
 
-        return view("system::menu.upsert")->with($parser);
+        return view('system::menu.upsert')->with($parser);
     }
 
     /**
@@ -130,26 +131,26 @@ class ManageMenuController extends Controller
     {
         Gate::authorize(Permission::SYSTEM_MENUS_UPDATE);
 
-        $id   = customDecrypt($id);
+        $id = customDecrypt($id);
         $menu = SysMenu::findOrFail($id);
 
         $input = $request->validate([
-            'name'                   => 'required|string|max:255',
-            'url'                    => 'nullable|string|max:255',
-            'icon'                   => 'nullable|string|max:255',
-            'parent_id'              => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'url' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:255',
+            'parent_id' => 'nullable|string',
             'show_if_has_permission' => 'nullable|string|max:255',
-            'order'                  => 'required|integer',
-            'is_active'              => 'required|boolean',
+            'order' => 'required|integer',
+            'is_active' => 'required|boolean',
         ]);
 
-        if (!empty($input['parent_id'])) {
+        if (! empty($input['parent_id'])) {
             $input['parent_id'] = customDecrypt($input['parent_id']);
         }
 
         // Get old data for logging
         $oldData = $menu->getOriginal();
-        
+
         $menu->update($input);
 
         // Log menu update
@@ -177,9 +178,9 @@ class ManageMenuController extends Controller
     {
         Gate::authorize(Permission::SYSTEM_MENUS_DELETE);
 
-        $id   = customDecrypt($id);
+        $id = customDecrypt($id);
         $menu = SysMenu::find($id);
-        
+
         if ($menu) {
             // Log menu deletion with menu data before deletion
             activity()
@@ -216,12 +217,12 @@ class ManageMenuController extends Controller
 
         $formattedMenus = $menus->map(function ($menu) {
             return [
-                'id'                  => customEncrypt($menu->id), // Use false to get deterministic encryption
-                'Name'                => $menu->Name,
-                'Url'                 => $menu->Url,
-                'Icon'                => $menu->Icon,
-                'parentId'            => $menu->parentId ? customEncrypt($menu->parentId, ) : null,
-                'IsActive'            => $menu->IsActive,
+                'id' => customEncrypt($menu->id), // Use false to get deterministic encryption
+                'Name' => $menu->Name,
+                'Url' => $menu->Url,
+                'Icon' => $menu->Icon,
+                'parentId' => $menu->parentId ? customEncrypt($menu->parentId) : null,
+                'IsActive' => $menu->IsActive,
                 'ShowIfHasPermission' => $menu->show_if_has_permission,
             ];
         });
@@ -234,7 +235,7 @@ class ManageMenuController extends Controller
         Gate::authorize(Permission::SYSTEM_MENUS_UPDATE);
 
         $input = $request->validate([
-            'ids'       => 'required|array',
+            'ids' => 'required|array',
             'is_active' => 'required',
         ]);
 
@@ -244,7 +245,7 @@ class ManageMenuController extends Controller
 
         // Get affected menus for logging
         $affectedMenus = SysMenu::whereIn('id', $ids)->get();
-        
+
         SysMenu::whereIn('id', $ids)->update(['is_active' => $input['is_active']]);
 
         // Log bulk status update
@@ -280,11 +281,11 @@ class ManageMenuController extends Controller
 
         $formattedMenus = $menus->map(function ($menu) {
             return [
-                'id'          => customEncrypt($menu->id),
-                'text'        => $menu->name,
-                'parentId'    => $menu->parent_id ? customEncrypt($menu->parent_id) : null,
+                'id' => customEncrypt($menu->id),
+                'text' => $menu->name,
+                'parentId' => $menu->parent_id ? customEncrypt($menu->parent_id) : null,
                 'hasChildren' => false,
-                'expanded'    => true,
+                'expanded' => true,
             ];
         });
 
@@ -302,6 +303,7 @@ class ManageMenuController extends Controller
                     $item['hasChildren'] = true;
                     $item['items'] = $childItems;
                 }
+
                 return $item;
             })
             ->values()
@@ -321,4 +323,3 @@ class ManageMenuController extends Controller
         return response()->json($permissions);
     }
 }
-

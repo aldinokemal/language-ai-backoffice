@@ -7,9 +7,9 @@ use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\DB1\SysPermission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 
 class ManagePermissionController extends Controller
@@ -19,7 +19,7 @@ class ManagePermissionController extends Controller
     private function defaultParser(): array
     {
         return [
-            'url'  => $this->url,
+            'url' => $this->url,
             'view' => 'system::permission',
         ];
     }
@@ -37,9 +37,8 @@ class ManagePermissionController extends Controller
             'breadcrumbs' => $breadcrumbs,
         ]);
 
-        return view("system::permission.index")->with($parser);
+        return view('system::permission.index')->with($parser);
     }
-
 
     /**
      * Store a newly created resource in storage.
@@ -49,13 +48,13 @@ class ManagePermissionController extends Controller
         Gate::authorize(Permission::SYSTEM_PERMISSIONS_CREATE);
 
         $models = json_decode($request->input('models'), true);
-        $model  = $models[0]; // Get first model from array
+        $model = $models[0]; // Get first model from array
 
         $validator = \Validator::make($model, [
-            'name'       => 'required|string|max:255',
-            'alias'      => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'alias' => 'required|string|max:255',
             'guard_name' => 'required|string|max:255',
-            'menu_id'    => 'required|string',
+            'menu_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -64,10 +63,10 @@ class ManagePermissionController extends Controller
 
         $menuId = customDecrypt($model['menu_id']);
         $permission = SysPermission::create([
-            'name'       => $model['name'],
-            'alias'      => $model['alias'],
+            'name' => $model['name'],
+            'alias' => $model['alias'],
             'guard_name' => $model['guard_name'],
-            'menu_id'    => $menuId,
+            'menu_id' => $menuId,
         ]);
 
         // Log permission creation
@@ -88,18 +87,17 @@ class ManagePermissionController extends Controller
             ->log('Permission baru dibuat');
 
         return response()->json([
-            'data'    => [
-                'id'         => customEncrypt($permission->id),
-                'name'       => $permission->name,
-                'alias'      => $permission->alias,
+            'data' => [
+                'id' => customEncrypt($permission->id),
+                'name' => $permission->name,
+                'alias' => $permission->alias,
                 'guard_name' => $permission->guard_name,
-                'menu_id'    => $permission->menu_id,
-                'menu_name'  => $permission->menu->name,
+                'menu_id' => $permission->menu_id,
+                'menu_name' => $permission->menu->name,
             ],
             'message' => 'Izin berhasil dibuat',
         ]);
     }
-
 
     /**
      * Update the specified resource in storage.
@@ -108,15 +106,15 @@ class ManagePermissionController extends Controller
     {
         Gate::authorize(Permission::SYSTEM_PERMISSIONS_UPDATE);
 
-        $id     = customDecrypt($id);
+        $id = customDecrypt($id);
         $models = json_decode($request->input('models'), true);
-        $model  = $models[0]; // Get first model from array
+        $model = $models[0]; // Get first model from array
 
         $validator = \Validator::make($model, [
-            'name'       => 'required|string|max:255',
-            'alias'      => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'alias' => 'required|string|max:255',
             'guard_name' => 'required|string|max:255',
-            'menu_id'    => 'required|string',
+            'menu_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -124,7 +122,7 @@ class ManagePermissionController extends Controller
         }
 
         $permission = SysPermission::findOrFail($id);
-        
+
         // Get old data for logging
         $oldData = [
             'name' => $permission->name,
@@ -135,10 +133,10 @@ class ManagePermissionController extends Controller
 
         $menuId = customDecrypt($model['menu_id']);
         $permission->update([
-            'name'       => $model['name'],
-            'alias'      => $model['alias'],
+            'name' => $model['name'],
+            'alias' => $model['alias'],
             'guard_name' => $model['guard_name'],
-            'menu_id'    => $menuId,
+            'menu_id' => $menuId,
         ]);
 
         // Log permission update
@@ -160,13 +158,13 @@ class ManagePermissionController extends Controller
             ->log('Permission diperbarui');
 
         return response()->json([
-            'data'    => [
-                'id'         => customEncrypt($permission->id),
-                'name'       => $permission->name,
-                'alias'      => $permission->alias,
+            'data' => [
+                'id' => customEncrypt($permission->id),
+                'name' => $permission->name,
+                'alias' => $permission->alias,
                 'guard_name' => $permission->guard_name,
-                'menu_id'    => customEncrypt($permission->menu_id),
-                'menu_name'  => $permission->menu->name,
+                'menu_id' => customEncrypt($permission->menu_id),
+                'menu_name' => $permission->menu->name,
             ],
             'message' => 'Izin berhasil diperbarui',
         ]);
@@ -183,7 +181,7 @@ class ManagePermissionController extends Controller
         // Get permission data for logging before deletion
         $permission = SysPermission::with('menu')->find($id);
         $permissionData = null;
-        
+
         if ($permission) {
             $permissionData = [
                 'name' => $permission->name,
@@ -242,8 +240,8 @@ class ManagePermissionController extends Controller
 
         // Apply pagination
         $pageSize = $request->input('pageSize', 20);
-        $page     = $request->input('page', 1);
-        $skip     = ($page - 1) * $pageSize;
+        $page = $request->input('page', 1);
+        $skip = ($page - 1) * $pageSize;
 
         $data = $permissions->skip($skip)
             ->take($pageSize)
@@ -251,17 +249,17 @@ class ManagePermissionController extends Controller
 
         $formatResponse = $data->map(function ($item) {
             return [
-                'id'         => customEncrypt($item->id),
-                'name'       => $item->name,
-                'alias'      => $item->alias,
+                'id' => customEncrypt($item->id),
+                'name' => $item->name,
+                'alias' => $item->alias,
                 'guard_name' => $item->guard_name,
-                'menu_id'    => customEncrypt($item->menu_id),
-                'menu_name'  => $item->menu->name,
+                'menu_id' => customEncrypt($item->menu_id),
+                'menu_name' => $item->menu->name,
             ];
         });
 
         return response()->json([
-            'data'  => $formatResponse,
+            'data' => $formatResponse,
             'total' => $total,
         ]);
     }

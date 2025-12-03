@@ -6,7 +6,6 @@ use App\Classes\Breadcrumbs;
 use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\MongoDB\ChatUsage;
-use App\Models\MongoDB\MasterPlan;
 use App\Models\MongoDB\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -21,7 +20,7 @@ class LaiDashboardController extends Controller
     private function defaultParser(): array
     {
         return [
-            'url'  => $this->url,
+            'url' => $this->url,
             'view' => 'languageai::dashboard',
         ];
     }
@@ -53,14 +52,14 @@ class LaiDashboardController extends Controller
         $activeSubscriptions = User::whereNotNull('plan_id')->count();
 
         $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth   = Carbon::now()->endOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
 
         $totalUsage = ChatUsage::whereBetween('date', [$startOfMonth, $endOfMonth])->sum('usage');
 
         return response()->json([
-            'total_users'          => $totalUsers,
+            'total_users' => $totalUsers,
             'active_subscriptions' => $activeSubscriptions,
-            'total_usage'          => (int) $totalUsage,
+            'total_usage' => (int) $totalUsage,
         ]);
     }
 
@@ -68,7 +67,7 @@ class LaiDashboardController extends Controller
     {
         Gate::authorize(Permission::LANGUAGE_AI_DASHBOARD_VIEW);
 
-        $endDate   = Carbon::now()->endOfDay();
+        $endDate = Carbon::now()->endOfDay();
         $startDate = Carbon::now()->subDays(29)->startOfDay();
 
         $chatUsages = ChatUsage::whereBetween('date', [$startDate, $endDate])
@@ -79,14 +78,14 @@ class LaiDashboardController extends Controller
             });
 
         $period = CarbonPeriod::create($startDate, $endDate);
-        $data   = [];
+        $data = [];
 
         foreach ($period as $date) {
-            $dateKey  = $date->format('Y-m-d');
+            $dateKey = $date->format('Y-m-d');
             $dayUsage = isset($chatUsages[$dateKey]) ? $chatUsages[$dateKey]->sum('usage') : 0;
 
             $data[] = [
-                'date'  => $dateKey,
+                'date' => $dateKey,
                 'value' => (int) $dayUsage,
             ];
         }

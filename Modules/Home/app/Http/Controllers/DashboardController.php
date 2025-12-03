@@ -4,7 +4,6 @@ namespace Modules\Home\Http\Controllers;
 
 use App\Classes\Breadcrumbs;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -22,7 +21,6 @@ class DashboardController extends Controller
         $breadcrumbs = [
             new Breadcrumbs('Dashboard', route('dashboard')),
         ];
-
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,

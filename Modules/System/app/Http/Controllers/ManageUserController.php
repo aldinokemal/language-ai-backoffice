@@ -13,12 +13,12 @@ use App\Models\DB1\SysUserOrganizationRole;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Auth;
 
 class ManageUserController extends Controller
 {
@@ -27,7 +27,7 @@ class ManageUserController extends Controller
     private function defaultParser(): array
     {
         return [
-            'url'  => $this->url,
+            'url' => $this->url,
             'view' => 'system::user',
         ];
     }
@@ -45,14 +45,14 @@ class ManageUserController extends Controller
             'breadcrumbs' => $breadcrumbs,
         ]);
 
-        return view("system::user.index")->with($parser);
+        return view('system::user.index')->with($parser);
     }
 
     public function edit($id)
     {
         Gate::authorize(Permission::SYSTEM_USERS_UPDATE);
 
-        $id   = customDecrypt($id);
+        $id = customDecrypt($id);
         $user = SysUser::findOrFail($id);
 
         $breadcrumbs = [
@@ -63,10 +63,10 @@ class ManageUserController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'user'        => $user,
+            'user' => $user,
         ]);
 
-        return view("system::user.upsert")->with($parser);
+        return view('system::user.upsert')->with($parser);
     }
 
     public function create()
@@ -81,10 +81,10 @@ class ManageUserController extends Controller
 
         $parser = array_merge($this->defaultParser(), [
             'breadcrumbs' => $breadcrumbs,
-            'user'        => null,
+            'user' => null,
         ]);
 
-        return view("system::user.upsert")->with($parser);
+        return view('system::user.upsert')->with($parser);
     }
 
     private function handleUpsert(Request $request, ?SysUser $user = null): JsonResponse
@@ -102,12 +102,14 @@ class ManageUserController extends Controller
             DB::commit();
 
             $message = $isUpdate ? 'Pengguna berhasil diperbarui' : 'Pengguna berhasil dibuat';
+
             return responseJSON($message, true);
 
         } catch (Exception $e) {
             DB::rollBack();
             logError($e);
             $errorMessage = $isUpdate ? 'Gagal memperbarui pengguna' : 'Gagal membuat pengguna';
+
             return responseJSON($errorMessage, [], 500, 'ERROR');
         }
     }
@@ -115,15 +117,15 @@ class ManageUserController extends Controller
     private function validateUpsertRequest(Request $request, ?SysUser $user): void
     {
         $rules = [
-            'name'           => 'required|string|max:255',
-            'email'          => ['required', 'email', Rule::unique('sys_users', 'email')->ignore($user?->id)],
-            'username'       => ['required', 'string', Rule::unique('sys_users', 'username')->ignore($user?->id)],
-            'phone'          => 'nullable|string|max:20',
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('sys_users', 'email')->ignore($user?->id)],
+            'username' => ['required', 'string', Rule::unique('sys_users', 'username')->ignore($user?->id)],
+            'phone' => 'nullable|string|max:20',
             'selected_roles' => 'nullable|array',
-            'default_roles'  => 'nullable|array',
+            'default_roles' => 'nullable|array',
         ];
 
-        if (!$user || $request->filled('password')) {
+        if (! $user || $request->filled('password')) {
             $rules['password'] = 'required|string|min:8|confirmed';
         }
 
@@ -140,20 +142,21 @@ class ManageUserController extends Controller
 
     private function createOrUpdateUser(Request $request, ?SysUser $user, bool $isUpdate): SysUser
     {
-        if (!$isUpdate) {
-            $user = new SysUser();
+        if (! $isUpdate) {
+            $user = new SysUser;
         }
 
-        $user->name     = $request->name;
-        $user->email    = $request->email;
+        $user->name = $request->name;
+        $user->email = $request->email;
         $user->username = $request->username;
-        $user->phone    = $request->phone;
+        $user->phone = $request->phone;
 
         if ($request->filled('password')) {
             $user->password = bcrypt($request->password);
         }
 
         $user->save();
+
         return $user;
     }
 
@@ -171,12 +174,12 @@ class ManageUserController extends Controller
     private function removeAvatar(SysUser $user, bool $isUpdate): void
     {
         try {
-            if (!str_contains($user->picture, 'default.png') && $user->picture_storage === StorageSource::S3->value) {
+            if (! str_contains($user->picture, 'default.png') && $user->picture_storage === StorageSource::S3->value) {
                 Storage::disk(StorageSource::S3->value)->delete($user->picture);
             }
 
             $oldPicture = $user->picture;
-            $user->picture         = null;
+            $user->picture = null;
             $user->picture_storage = null;
             $user->save();
 
@@ -207,12 +210,12 @@ class ManageUserController extends Controller
             $path = $file->storeAs(dirname($filePath), basename($filePath), StorageSource::S3->value);
 
             if ($path) {
-                if ($user->picture && !str_contains($user->picture, 'default.png') && $user->picture_storage === StorageSource::S3->value) {
+                if ($user->picture && ! str_contains($user->picture, 'default.png') && $user->picture_storage === StorageSource::S3->value) {
                     Storage::disk(StorageSource::S3->value)->delete($user->picture);
                 }
 
                 $oldPicture = $user->picture;
-                $user->picture         = $filePath;
+                $user->picture = $filePath;
                 $user->picture_storage = StorageSource::S3->value;
                 $user->save();
 
@@ -242,7 +245,7 @@ class ManageUserController extends Controller
 
     private function handleRoleAssignments(Request $request, SysUser $user, bool $isUpdate): void
     {
-        if (!$request->filled('selected_roles')) {
+        if (! $request->filled('selected_roles')) {
             return;
         }
 
@@ -255,23 +258,23 @@ class ManageUserController extends Controller
         }
 
         $selectedRoles = collect($request->selected_roles)
-            ->map(fn(string $id): int => customDecrypt($id))
+            ->map(fn (string $id): int => customDecrypt($id))
             ->toArray();
 
         $defaultRoles = collect($request->default_roles ?? [])
-            ->mapWithKeys(fn(string $roleId, string $orgId): array => [customDecrypt($orgId) => customDecrypt($roleId)])
+            ->mapWithKeys(fn (string $roleId, string $orgId): array => [customDecrypt($orgId) => customDecrypt($roleId)])
             ->toArray();
 
         foreach ($selectedRoles as $roleId) {
             $role = SysRole::find($roleId);
             $userOrg = SysUserOrganization::firstOrCreate([
                 'organization_id' => $role->organization_id,
-                'user_id'         => $user->id,
+                'user_id' => $user->id,
             ], ['is_default' => true]);
 
             SysUserOrganizationRole::updateOrCreate([
                 'user_organization_id' => $userOrg->id,
-                'role_id'              => $roleId,
+                'role_id' => $roleId,
             ], ['is_default' => in_array($roleId, $defaultRoles)]);
         }
 
@@ -281,10 +284,10 @@ class ManageUserController extends Controller
             ->performedOn($user)
             ->event($isUpdate ? 'updated' : 'created')
             ->withProperties([
-                'assigned_roles' => $assignedRoles->map(fn(SysRole $role) => [
-                    'role_name'         => $role->name,
+                'assigned_roles' => $assignedRoles->map(fn (SysRole $role) => [
+                    'role_name' => $role->name,
                     'organization_name' => $role->organization?->name ?? 'Unknown',
-                    'is_default'        => in_array($role->id, $defaultRoles),
+                    'is_default' => in_array($role->id, $defaultRoles),
                 ])->toArray(),
                 'operation_type' => $isUpdate ? 'update_roles' : 'assign_roles',
             ])
@@ -299,14 +302,16 @@ class ManageUserController extends Controller
     public function store(Request $request)
     {
         Gate::authorize(Permission::SYSTEM_USERS_CREATE);
+
         return $this->handleUpsert($request);
     }
 
     public function update(Request $request, $id)
     {
         Gate::authorize(Permission::SYSTEM_USERS_UPDATE);
-        $id   = customDecrypt($id);
+        $id = customDecrypt($id);
         $user = SysUser::findOrFail($id);
+
         return $this->handleUpsert($request, $user);
     }
 
@@ -341,12 +346,12 @@ class ManageUserController extends Controller
             ->performedOn($user)
             ->event('deleted')
             ->withProperties([
-                'operation'          => 'user_deleted',
-                'deleted_user_data'  => [
-                    'name'       => $user->name,
-                    'email'      => $user->email,
-                    'username'   => $user->username,
-                    'had_avatar' => !empty($user->picture),
+                'operation' => 'user_deleted',
+                'deleted_user_data' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'username' => $user->username,
+                    'had_avatar' => ! empty($user->picture),
                 ],
             ])
             ->inLog('system_users')
@@ -355,7 +360,7 @@ class ManageUserController extends Controller
 
     private function cleanupUserAvatar(SysUser $user): void
     {
-        if ($user->picture && !str_contains($user->picture, 'default.png') && $user->picture_storage === StorageSource::S3->value) {
+        if ($user->picture && ! str_contains($user->picture, 'default.png') && $user->picture_storage === StorageSource::S3->value) {
             Storage::disk(StorageSource::S3->value)->delete($user->picture);
         }
     }
@@ -380,6 +385,7 @@ class ManageUserController extends Controller
         $this->logBulkBanActivity($affectedUsers, $action, $bannedAt, $selectAll);
 
         $message = $this->getBanResponseMessage($action);
+
         return responseJSON($message);
     }
 
@@ -391,7 +397,7 @@ class ManageUserController extends Controller
     private function extractUserIds(Request $request): array
     {
         return collect($request->input('toggledNodes', []))
-            ->map(fn(string $id) => customDecrypt($id))
+            ->map(fn (string $id) => customDecrypt($id))
             ->toArray();
     }
 
@@ -464,13 +470,13 @@ class ManageUserController extends Controller
 
     private function applyDatagridFilters($query, Request $request): void
     {
-        if (!$request->has('filter.filters')) {
+        if (! $request->has('filter.filters')) {
             return;
         }
 
         $filters = $request->input('filter.filters');
         foreach ($filters as $filterItem) {
-            if (!isset($filterItem['field']) || !isset($filterItem['value'])) {
+            if (! isset($filterItem['field']) || ! isset($filterItem['value'])) {
                 continue;
             }
 
@@ -502,8 +508,8 @@ class ManageUserController extends Controller
     private function applyNameFilter($query, array $filterItem): void
     {
         $query->where(function ($q) use ($filterItem) {
-            $q->where('name', 'ilike', '%' . strtolower($filterItem['value']) . '%')
-                ->orWhere('email', 'ilike', '%' . strtolower($filterItem['value']) . '%');
+            $q->where('name', 'ilike', '%'.strtolower($filterItem['value']).'%')
+                ->orWhere('email', 'ilike', '%'.strtolower($filterItem['value']).'%');
         });
     }
 
@@ -511,14 +517,14 @@ class ManageUserController extends Controller
     {
         $query->whereHas('organizations', function ($q) use ($filterItem) {
             $q->whereHas('organization', function ($q) use ($filterItem) {
-                $q->where('name', 'ilike', '%' . strtolower($filterItem['value']) . '%');
+                $q->where('name', 'ilike', '%'.strtolower($filterItem['value']).'%');
             });
         });
     }
 
     private function applyEmailFilter($query, array $filterItem): void
     {
-        $query->where('email', 'ilike', '%' . strtolower($filterItem['value']) . '%');
+        $query->where('email', 'ilike', '%'.strtolower($filterItem['value']).'%');
     }
 
     private function applyBanStatusFilter($query, array $filterItem): void
@@ -541,7 +547,7 @@ class ManageUserController extends Controller
 
     private function applyDatagridSorting($query, Request $request): void
     {
-        if (!$request->has('sort')) {
+        if (! $request->has('sort')) {
             return;
         }
 
@@ -583,14 +589,14 @@ class ManageUserController extends Controller
     {
         return [
             'total' => $totalCount,
-            'data'  => $users->map(fn(SysUser $user) => [
-                'id'            => customEncrypt($user->id),
-                'name'          => $user->name,
-                'email'         => $user->email,
-                'avatar'        => getUserImage($user),
-                'is_banned'     => !empty($user->banned_at),
-                'created_at'    => $user->created_at,
-                'organizations' => $user->organizations->map(fn(SysUserOrganization $organization) => $organization->organization?->name ?? 'Unknown')->join('|'),
+            'data' => $users->map(fn (SysUser $user) => [
+                'id' => customEncrypt($user->id),
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => getUserImage($user),
+                'is_banned' => ! empty($user->banned_at),
+                'created_at' => $user->created_at,
+                'organizations' => $user->organizations->map(fn (SysUserOrganization $organization) => $organization->organization?->name ?? 'Unknown')->join('|'),
             ]),
         ];
     }
@@ -628,7 +634,7 @@ class ManageUserController extends Controller
         if ($request->has('filter.filters')) {
             $filters = $request->input('filter.filters');
             foreach ($filters as $filter) {
-                if (!isset($filter['field']) || !isset($filter['value'])) {
+                if (! isset($filter['field']) || ! isset($filter['value'])) {
                     continue;
                 }
 
@@ -683,11 +689,12 @@ class ManageUserController extends Controller
     private function getSelectedRolesForUser(Request $request)
     {
         $userId = $request->input('user_id');
-        if (!$userId) {
+        if (! $userId) {
             return collect();
         }
 
         $userId = customDecrypt($userId);
+
         return SysUserOrganizationRole::query()
             ->whereHas('userOrganization', function ($q) use ($userId) {
                 $q->where('user_id', $userId);
@@ -702,16 +709,17 @@ class ManageUserController extends Controller
     {
         return [
             'total' => $totalCount,
-            'data'  => $roles->map(function (SysRole $role) use ($selectedRoles): array {
+            'data' => $roles->map(function (SysRole $role) use ($selectedRoles): array {
                 $roleId = $role->id;
+
                 return [
-                    'id'              => customEncrypt($roleId),
+                    'id' => customEncrypt($roleId),
                     'organization_id' => customEncrypt($role->organization_id),
-                    'organization'    => $role->organization?->name ?? 'Unknown',
-                    'role'            => $role->name,
-                    'description'     => $role->description,
-                    'is_selected'     => $selectedRoles->has($roleId),
-                    'is_default'      => $selectedRoles->get($roleId, false),
+                    'organization' => $role->organization?->name ?? 'Unknown',
+                    'role' => $role->name,
+                    'description' => $role->description,
+                    'is_selected' => $selectedRoles->has($roleId),
+                    'is_default' => $selectedRoles->get($roleId, false),
                 ];
             }),
         ];
